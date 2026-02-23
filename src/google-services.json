@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "417798626125",
+    "project_id": "notification-32e48",
+    "storage_bucket": "notification-32e48.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417798626125:android:a910ab6aa220998d907504",
+        "android_client_info": {
+          "package_name": "com.sinfu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2ZO8yPy6QOcLE5GDd-m5GPXnYntP3GCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

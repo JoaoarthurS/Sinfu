@@ -1,0 +1,108 @@
+/**
+ * Implementação do Repositório de Autenticação
+ * Princípio SOLID: SRP - Responsável apenas pela lógica de autenticação
+ * Princípio SOLID: DIP - Depende de abstrações (IApiClient, IStorageService)
+ */
+import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
+import { IApiClient } from '../../domain/interfaces/IApiClient';
+import { IStorageService } from '../../domain/interfaces/IStorageService';
+import { AuthCredentials, AuthResponse, User, UserRole } from '../../domain/entities/User';
+import { API_ENDPOINTS, STORAGE_KEYS } from '../../config/api.config';
+
+export class AuthRepository implements IAuthRepository {
+  constructor(
+    private apiClient: IApiClient,
+    private storageService: IStorageService
+  ) {}
+
+  async login(credentials: AuthCredentials): Promise<AuthResponse> {
+    try {
+      const response = await this.apiClient.post<any>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        credentials
+      );
+
+      const { token, user: apiUser } = response.data;
+
+      // Mapear resposta da API para entidade User
+      // A API retorna 'roles' (array), mas nosso app usa 'role' (string)
+      const user: User = {
+        id: apiUser.id.toString(),
+        name: apiUser.name,
+        email: apiUser.email,
+        role: this.mapRoleFromApi(apiUser.roles),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Salvar token e dados do usuário
+      await this.storageService.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      await this.storageService.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+
+      // Configurar token no cliente API
+      this.apiClient.setAuthToken(token);
+
+      return { token, user };
+    } catch (error) {
+      console.error('Login error:', {
+        endpoint: API_ENDPOINTS.AUTH.LOGIN,
+        error
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Mapeia o array de roles da API para um único valor de role
+   * Se o usuário tem a role 'admin', retorna ADMIN, caso contrário USER
+   */
+  private mapRoleFromApi(roles: string[]): UserRole {
+    return roles && roles.includes('admin') ? UserRole.ADMIN : UserRole.USER;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      // Tentar fazer logout no servidor
+      await this.apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      // Sempre limpar dados locais
+      await this.storageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      await this.storageService.removeItem(STORAGE_KEYS.USER_DATA);
+      this.apiClient.removeAuthToken();
+    }
+  }
+
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const userData = await this.storageService.getItem(STORAGE_KEYS.USER_DATA);
+      if (!userData) {
+        return null;
+      }
+
+      const user = JSON.parse(userData) as User;
+      
+      // Converter strings de data para objetos Date
+      return {
+        ...user,
+        createdAt: new Date(user.createdAt),
+        updatedAt: new Date(user.updatedAt),
+      };
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return null;
+    }
+  }
+
+  async validateToken(token: string): Promise<boolean> {
+    try {
+      this.apiClient.setAuthToken(token);
+      await this.apiClient.get(API_ENDPOINTS.AUTH.ME);
+      return true;
+    } catch (error) {
+      console.error('Validate token error:', error);
+      return false;
+    }
+  }
+}
