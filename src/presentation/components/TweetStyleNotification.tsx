@@ -101,14 +101,6 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Icon 
-            family="MaterialIcons" 
-            name="notifications-active" 
-            size={24} 
-            color={getPriorityColor()} 
-          />
-        </View>
         <View style={styles.headerInfo}>
           <Text style={styles.title} numberOfLines={1}>
             {notification.title}
@@ -182,15 +174,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: theme.spacing.sm,
   },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: theme.spacing.sm,
-  },
   headerInfo: {
     flex: 1,
   },
@@ -205,7 +188,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   content: {
-    marginLeft: 56, // Alinha com o texto do header
   },
   message: {
     ...theme.typography.body,
@@ -261,7 +243,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     marginTop: theme.spacing.sm,
-    marginLeft: 56,
     paddingTop: theme.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.divider,

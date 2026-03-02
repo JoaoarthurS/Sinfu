@@ -28,6 +28,13 @@ export const API_ENDPOINTS = {
   DEVICE_TOKEN: {
     REGISTER: 'device-token',
   },
+  
+  PROFILE: {
+    GET: 'users/me',
+    UPDATE: 'users/me',
+    REMOVE_IMAGE: 'users/me/image',
+  },
+  
   NOTIFICATIONS: {
     LIST: 'notifications',
     MARK_READ: 'notifications/:id/read',

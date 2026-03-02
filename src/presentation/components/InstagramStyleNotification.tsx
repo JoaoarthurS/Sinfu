@@ -88,14 +88,6 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.avatar, { borderColor: getPriorityColor() }]}>
-          <Icon 
-            family="Ionicons" 
-            name="notifications" 
-            size={20} 
-            color={getPriorityColor()} 
-          />
-        </View>
         <View style={styles.headerInfo}>
           <Text style={styles.title} numberOfLines={1}>
             {notification.title}
@@ -139,16 +131,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing.md,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    marginRight: theme.spacing.sm,
   },
   headerInfo: {
     flex: 1,

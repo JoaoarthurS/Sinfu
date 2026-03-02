@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserDashboardScreenProps } from '../../navigation/types';
 import { useAuth } from '../../core/hooks/useAuth';
-import { Card } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
@@ -94,8 +93,9 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.logoHeader}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header estilo Instagram */}
+      <View style={styles.header}>
         <View style={styles.logoContainer}>
           <Image 
             source={require('../../assets/images/unimontes-logo.png')}
@@ -103,25 +103,18 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
             resizeMode="contain"
           />
         </View>
-      </View>
-
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Profile')}
-          style={styles.profileSection}
-        >
-          <Avatar
-            imageUrl={user?.profileImageUrl}
-            name={user?.name || 'U'}
-            size={50}
-          />
-            <View style={styles.userInfo}>
-            <Text style={styles.greeting}>{user?.name || 'Usuário'}</Text>
-            </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleLogout} disabled={loading}>
-          <Icon family="Ionicons" name="log-out-outline" size={28} color={theme.colors.danger} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Profile')}
+            style={styles.iconButton}
+          >
+            <Avatar
+              imageUrl={user?.profileImageUrl}
+              name={user?.name || 'U'}
+              size={32}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -131,30 +124,29 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-
         {loadingNotifications ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Carregando notificações...</Text>
+            <Text style={styles.loadingText}>Carregando...</Text>
           </View>
         ) : notifications.length === 0 ? (
-          /* Empty State */
-          <Card>
-            <View style={styles.emptyState}>
+          /* Empty State - Estilo Instagram */
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
               <Icon 
                 family="Ionicons" 
-                name="notifications-off-outline" 
-                size={64} 
+                name="notifications-outline" 
+                size={80} 
                 color={theme.colors.textSecondary} 
               />
-              <Text style={styles.emptyTitle}>Nenhuma notificação</Text>
-              <Text style={styles.emptySubtitle}>
-                Você ainda não recebeu nenhuma notificação dos seus grupos.
-              </Text>
             </View>
-          </Card>
+            <Text style={styles.emptyTitle}>Sem notificações</Text>
+            <Text style={styles.emptySubtitle}>
+              Quando você receber notificações,{'\n'}elas aparecerão aqui.
+            </Text>
+          </View>
         ) : (
-          /* Feed de Notificações */
+          /* Feed de Notificações - Estilo Instagram */
           <View style={styles.feedContainer}>
             {notifications.map((notification) => {
               console.log('🔍 [UserDashboard] Renderizando notificação:', {
@@ -192,104 +184,88 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSecondary,
-  },
-  logoHeader: {
     backgroundColor: theme.colors.surface,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    alignItems: 'center',
-  },
-  logoContainer: {
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    letterSpacing: 1,
-  },
-  logo: {
-    height: 40,
-    width: 150,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl, // maior
+    paddingVertical: theme.spacing.md,   // maior
     backgroundColor: theme.colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: theme.colors.border,
+    height: 64, // maior
   },
-  profileSection: {
+  logoContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  logo: {
+    height: 40, // maior
+    width: 140, // maior
+  },
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.lg, // maior
   },
-  userInfo: {
+  iconButton: {
+    width: 44, // maior
+    height: 44, // maior
     justifyContent: 'center',
-  },
-  greeting: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  role: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.user,
-    fontWeight: '600',
+    alignItems: 'center',
   },
   content: {
     flex: 1,
-  },
-  feedHeader: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-  },
-  feedTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  feedSubtitle: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
+    backgroundColor: theme.colors.backgroundSecondary,
+    paddingTop: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
   },
   feedContainer: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl || theme.spacing.xl * 1.5, // maior
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: theme.spacing.xl * 2,
+    paddingVertical: theme.spacing.xl * 4, // maior
   },
   loadingText: {
     ...theme.typography.body,
     color: theme.colors.textSecondary,
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.lg, // maior
+    fontSize: 16, // maior
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: theme.spacing.xl * 2,
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xl * 5, // maior
+    paddingHorizontal: theme.spacing.xxl || theme.spacing.xl * 1.5, // maior
+  },
+  emptyIconContainer: {
+    width: 140, // maior
+    height: 140, // maior
+    borderRadius: 70, // maior
+    borderWidth: 3,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xl, // maior
   },
   emptyTitle: {
-    ...theme.typography.h3,
+    ...theme.typography.h2,
     color: theme.colors.text,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.md, // maior
+    fontSize: 26, // maior
+    fontWeight: '700', // levemente mais forte
   },
   emptySubtitle: {
     ...theme.typography.body,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    lineHeight: 22, // maior
+    fontSize: 16, // maior
   },
 });
 

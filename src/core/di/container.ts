@@ -10,6 +10,7 @@ import { AsyncStorageService } from '../../data/services/AsyncStorageService';
 import { AuthRepository } from '../../data/repositories/AuthRepository';
 import { NotificationRepository } from '../../data/repositories/NotificationRepository';
 import { GroupRepository } from '../../data/repositories/GroupRepository';
+import { ProfileRepository } from '../../data/repositories/ProfileRepository';
 import { LoginUseCase } from '../../domain/useCases/LoginUseCase';
 import { LogoutUseCase } from '../../domain/useCases/LogoutUseCase';
 import { GetAllNotificationsUseCase } from '../../domain/useCases/GetAllNotificationsUseCase';
@@ -21,6 +22,8 @@ import { CreateGroupUseCase } from '../../domain/useCases/CreateGroupUseCase';
 import { UpdateGroupUseCase } from '../../domain/useCases/UpdateGroupUseCase';
 import { DeleteGroupUseCase } from '../../domain/useCases/DeleteGroupUseCase';
 import { NotifyGroupUseCase } from '../../domain/useCases/NotifyGroupUseCase';
+import { GetProfileUseCase } from '../../domain/useCases/GetProfileUseCase';
+import { UpdateProfileUseCase } from '../../domain/useCases/UpdateProfileUseCase';
 
 class DIContainer {
   private static instance: DIContainer;
@@ -33,6 +36,7 @@ class DIContainer {
   private _authRepository?: AuthRepository;
   private _notificationRepository?: NotificationRepository;
   private _groupRepository?: GroupRepository;
+  private _profileRepository?: ProfileRepository;
   
   // Use Cases
   private _loginUseCase?: LoginUseCase;
@@ -46,6 +50,8 @@ class DIContainer {
   private _updateGroupUseCase?: UpdateGroupUseCase;
   private _deleteGroupUseCase?: DeleteGroupUseCase;
   private _notifyGroupUseCase?: NotifyGroupUseCase;
+  private _getProfileUseCase?: GetProfileUseCase;
+  private _updateProfileUseCase?: UpdateProfileUseCase;
 
   private constructor() {}
 
@@ -94,6 +100,16 @@ class DIContainer {
       this._notificationRepository = new NotificationRepository(this.apiClient);
     }
     return this._notificationRepository;
+  }
+
+  get profileRepository(): ProfileRepository {
+    if (!this._profileRepository) {
+      this._profileRepository = new ProfileRepository(
+        this.apiClient,
+        this.storageService
+      );
+    }
+    return this._profileRepository;
   }
 
   // Use Cases
@@ -192,6 +208,24 @@ class DIContainer {
     return this._notifyGroupUseCase;
   }
 
+  get getProfileUseCase(): GetProfileUseCase {
+    if (!this._getProfileUseCase) {
+      this._getProfileUseCase = new GetProfileUseCase(
+        this.profileRepository
+      );
+    }
+    return this._getProfileUseCase;
+  }
+
+  get updateProfileUseCase(): UpdateProfileUseCase {
+    if (!this._updateProfileUseCase) {
+      this._updateProfileUseCase = new UpdateProfileUseCase(
+        this.profileRepository
+      );
+    }
+    return this._updateProfileUseCase;
+  }
+
   // Reset para testes
   reset(): void {
     this._apiClient = undefined;
@@ -199,6 +233,7 @@ class DIContainer {
     this._authRepository = undefined;
     this._notificationRepository = undefined;
     this._groupRepository = undefined;
+    this._profileRepository = undefined;
     this._loginUseCase = undefined;
     this._logoutUseCase = undefined;
     this._getAllNotificationsUseCase = undefined;
@@ -210,6 +245,8 @@ class DIContainer {
     this._updateGroupUseCase = undefined;
     this._deleteGroupUseCase = undefined;
     this._notifyGroupUseCase = undefined;
+    this._getProfileUseCase = undefined;
+    this._updateProfileUseCase = undefined;
   }
 }
 

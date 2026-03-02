@@ -19,12 +19,14 @@ import { ProfileScreenProps } from '../../navigation/types';
 import { useAuth } from '../../core/hooks/useAuth';
 import { Avatar } from '../components/Avatar';
 import { Card } from '../components/Card';
+import { HeaderMenu } from '../components/HeaderMenu';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { container } from '../../core/di/container';
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   
@@ -82,13 +84,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       setLoading(true);
 
       // Preparar dados para envio
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
+      const updateData: any = {
+        name,
+        email,
+      };
       
       if (password) {
-        formData.append('password', password);
-        formData.append('password_confirmation', passwordConfirmation);
+        updateData.password = password;
+        updateData.password_confirmation = passwordConfirmation;
       }
 
       if (selectedImage) {
@@ -96,43 +99,36 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-        formData.append('profile_image', {
+        updateData.profile_image = {
           uri: selectedImage,
           type,
           name: filename,
-        } as any);
+        };
       }
 
-      // Aqui você chamaria o use case de atualização
-      // const response = await container.updateUserUseCase.execute(user!.id, formData);
+      // Chamar use case de atualização
+      const updatedUser = await container.updateProfileUseCase.execute(updateData);
       
-      // Por enquanto, atualizar apenas localmente
+      // Atualizar contexto
       if (updateUser) {
-        const updatedData: Partial<typeof user> = {
-          name,
-          email,
-        };
-        
-        if (selectedImage) {
-          updatedData.profileImageUrl = selectedImage;
-        }
-        
-        updateUser(updatedData);
+        updateUser(updatedUser);
       }
       
-      // Simulação de sucesso
+      // Limpar campos de senha
+      setPassword('');
+      setPasswordConfirmation('');
+      setSelectedImage(null);
+      
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso', [
         {
           text: 'OK',
           onPress: () => {
             setEditing(false);
-            setPassword('');
-            setPasswordConfirmation('');
-            navigation.goBack();
           },
         },
       ]);
     } catch (error: any) {
+      console.error('Update profile error:', error);
       Alert.alert('Erro', error.message || 'Não foi possível atualizar o perfil');
     } finally {
       setLoading(false);
@@ -148,6 +144,30 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setEditing(false);
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Deseja realmente sair da sua conta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await signOut();
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível sair. Tente novamente.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header */}
@@ -156,14 +176,21 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <Icon family="Ionicons" name="arrow-back" size={28} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Meu Perfil</Text>
-        <TouchableOpacity onPress={() => setEditing(!editing)}>
-          <Icon 
-            family="Ionicons" 
-            name={editing ? "close" : "create-outline"} 
-            size={28} 
-            color={theme.colors.primary} 
-          />
-        </TouchableOpacity>
+        <HeaderMenu
+          options={[
+            {
+              label: 'Editar perfil',
+              icon: 'create-outline',
+              onPress: () => setEditing(!editing),
+            },
+            {
+              label: 'Sair',
+              icon: 'log-out-outline',
+              onPress: handleLogout,
+              destructive: true,
+            },
+          ]}
+        />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
