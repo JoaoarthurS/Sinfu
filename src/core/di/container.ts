@@ -24,6 +24,9 @@ import { DeleteGroupUseCase } from '../../domain/useCases/DeleteGroupUseCase';
 import { NotifyGroupUseCase } from '../../domain/useCases/NotifyGroupUseCase';
 import { GetProfileUseCase } from '../../domain/useCases/GetProfileUseCase';
 import { UpdateProfileUseCase } from '../../domain/useCases/UpdateProfileUseCase';
+import { SaveNotificationUseCase } from '../../domain/useCases/SaveNotificationUseCase';
+import { UnsaveNotificationUseCase } from '../../domain/useCases/UnsaveNotificationUseCase';
+import { GetSavedNotificationsUseCase } from '../../domain/useCases/GetSavedNotificationsUseCase';
 
 class DIContainer {
   private static instance: DIContainer;
@@ -52,6 +55,9 @@ class DIContainer {
   private _notifyGroupUseCase?: NotifyGroupUseCase;
   private _getProfileUseCase?: GetProfileUseCase;
   private _updateProfileUseCase?: UpdateProfileUseCase;
+  private _saveNotificationUseCase?: SaveNotificationUseCase;
+  private _unsaveNotificationUseCase?: UnsaveNotificationUseCase;
+  private _getSavedNotificationsUseCase?: GetSavedNotificationsUseCase;
 
   private constructor() {}
 
@@ -226,6 +232,33 @@ class DIContainer {
     return this._updateProfileUseCase;
   }
 
+  get saveNotificationUseCase(): SaveNotificationUseCase {
+    if (!this._saveNotificationUseCase) {
+      this._saveNotificationUseCase = new SaveNotificationUseCase(
+        this.notificationRepository
+      );
+    }
+    return this._saveNotificationUseCase;
+  }
+
+  get unsaveNotificationUseCase(): UnsaveNotificationUseCase {
+    if (!this._unsaveNotificationUseCase) {
+      this._unsaveNotificationUseCase = new UnsaveNotificationUseCase(
+        this.notificationRepository
+      );
+    }
+    return this._unsaveNotificationUseCase;
+  }
+
+  get getSavedNotificationsUseCase(): GetSavedNotificationsUseCase {
+    if (!this._getSavedNotificationsUseCase) {
+      this._getSavedNotificationsUseCase = new GetSavedNotificationsUseCase(
+        this.notificationRepository
+      );
+    }
+    return this._getSavedNotificationsUseCase;
+  }
+
   // Reset para testes
   reset(): void {
     this._apiClient = undefined;
@@ -247,6 +280,9 @@ class DIContainer {
     this._notifyGroupUseCase = undefined;
     this._getProfileUseCase = undefined;
     this._updateProfileUseCase = undefined;
+    this._saveNotificationUseCase = undefined;
+    this._unsaveNotificationUseCase = undefined;
+    this._getSavedNotificationsUseCase = undefined;
   }
 }
 

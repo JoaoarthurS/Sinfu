@@ -11,4 +11,7 @@ export interface INotificationRepository {
   update(notification: UpdateNotificationDTO): Promise<Notification>;
   delete(id: string): Promise<void>;
   markAsRead(id: string): Promise<void>;
+  saveNotification(notificationId: string): Promise<void>;
+  unsaveNotification(notificationId: string): Promise<void>;
+  getSavedNotifications(): Promise<Notification[]>;
 }

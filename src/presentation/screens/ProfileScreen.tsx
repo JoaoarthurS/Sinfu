@@ -184,6 +184,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               onPress: () => setEditing(!editing),
             },
             {
+              label: 'Notificações Salvas',
+              icon: 'bookmark-outline',
+              onPress: () => navigation.navigate('SavedNotifications'),
+            },
+            {
               label: 'Sair',
               icon: 'log-out-outline',
               onPress: handleLogout,

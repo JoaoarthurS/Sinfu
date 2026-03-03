@@ -31,6 +31,8 @@ export class AuthRepository implements IAuthRepository {
         name: apiUser.name,
         email: apiUser.email,
         role: this.mapRoleFromApi(apiUser.roles),
+        profileImage: apiUser.profile_image,
+        profileImageUrl: apiUser.profile_image_url,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

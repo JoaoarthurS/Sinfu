@@ -16,15 +16,19 @@ import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { Notification } from '../../domain/entities/Notification';
 import { AuthenticatedImage } from './AuthenticatedImage';
+import { container } from '../../core/di/container';
 
 interface TweetStyleNotificationProps {
   notification: Notification;
+  onUnsave?: (notificationId: string) => void;
 }
 
 export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
   notification,
+  onUnsave,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [isSaved, setIsSaved] = useState(notification.saved || false);
   
   console.log('🖼️ [TweetStyleNotification] Renderizando notificação:', {
     id: notification.id,
@@ -81,6 +85,26 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
     } catch (error: any) {
       Alert.alert('Erro', 'Não foi possível compartilhar o conteúdo');
       console.error('Erro ao compartilhar:', error);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    try {
+      if (isSaved) {
+        // Desfazer salvamento
+        await container.unsaveNotificationUseCase.execute(notification.id);
+        setIsSaved(false);
+        if (onUnsave) {
+          onUnsave(notification.id);
+        }
+      } else {
+        // Salvar
+        await container.saveNotificationUseCase.execute(notification.id);
+        setIsSaved(true);
+      }
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Não foi possível salvar a notificação');
+      console.error('Erro ao salvar notificação:', error);
     }
   };
 
@@ -148,9 +172,16 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
 
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon family="Ionicons" name="bookmark-outline" size={18} color={theme.colors.textSecondary} />
-          <Text style={styles.footerButtonText}>Salvar</Text>
+        <TouchableOpacity style={styles.footerButton} onPress={handleSaveToggle}>
+          <Icon 
+            family="Ionicons" 
+            name={isSaved ? "bookmark" : "bookmark-outline"} 
+            size={18} 
+            color={isSaved ? theme.colors.primary : theme.colors.textSecondary} 
+          />
+          <Text style={[styles.footerButtonText, isSaved && styles.footerButtonTextActive]}>
+            {isSaved ? 'Salvo' : 'Salvar'}
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.footerButton} onPress={handleShare}>
@@ -255,5 +286,9 @@ const styles = StyleSheet.create({
   footerButtonText: {
     ...theme.typography.bodySmall,
     color: theme.colors.textSecondary,
+  },
+  footerButtonTextActive: {
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
 });

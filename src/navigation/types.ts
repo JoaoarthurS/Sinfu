@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Groups: undefined;
   CreateNotification: undefined;
   Profile: undefined;
+  SavedNotifications: undefined;
 };
 
 export type UserTypeSelectionScreenProps = NativeStackScreenProps<RootStackParamList, 'UserTypeSelection'>;
@@ -26,3 +27,4 @@ export type AdminDashboardScreenProps = NativeStackScreenProps<RootStackParamLis
 export type GroupsScreenProps = NativeStackScreenProps<RootStackParamList, 'Groups'>;
 export type CreateNotificationScreenProps = NativeStackScreenProps<RootStackParamList, 'CreateNotification'>;
 export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;
+export type SavedNotificationsScreenProps = NativeStackScreenProps<RootStackParamList, 'SavedNotifications'>;

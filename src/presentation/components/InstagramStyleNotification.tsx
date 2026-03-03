@@ -2,7 +2,7 @@
  * Componente de Notificação estilo Instagram Feed
  * Para notificações SEM imagem
  */
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,14 +15,18 @@ import {
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { Notification } from '../../domain/entities/Notification';
+import { container } from '../../core/di/container';
 
 interface InstagramStyleNotificationProps {
   notification: Notification;
+  onUnsave?: (notificationId: string) => void;
 }
 
 export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProps> = ({
   notification,
+  onUnsave,
 }) => {
+  const [isSaved, setIsSaved] = useState(notification.saved || false);
   const formatTime = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -71,6 +75,26 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
     }
   };
 
+  const handleSaveToggle = async () => {
+    try {
+      if (isSaved) {
+        // Desfazer salvamento
+        await container.unsaveNotificationUseCase.execute(notification.id);
+        setIsSaved(false);
+        if (onUnsave) {
+          onUnsave(notification.id);
+        }
+      } else {
+        // Salvar
+        await container.saveNotificationUseCase.execute(notification.id);
+        setIsSaved(true);
+      }
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Não foi possível salvar a notificação');
+      console.error('Erro ao salvar notificação:', error);
+    }
+  };
+
   const getPriorityColor = () => {
     switch (notification.priority) {
       case 'high':
@@ -113,8 +137,13 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
           <Icon family="Ionicons" name="paper-plane-outline" size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Icon family="Ionicons" name="bookmark-outline" size={22} color={theme.colors.text} />
+        <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle}>
+          <Icon 
+            family="Ionicons" 
+            name={isSaved ? "bookmark" : "bookmark-outline"} 
+            size={22} 
+            color={isSaved ? theme.colors.primary : theme.colors.text} 
+          />
         </TouchableOpacity>
       </View>
     </View>

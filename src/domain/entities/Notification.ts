@@ -14,6 +14,7 @@ export interface Notification {
   message: string;
   priority: NotificationPriority;
   read: boolean;
+  saved?: boolean; // Indica se a notificação foi salva pelo usuário
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;

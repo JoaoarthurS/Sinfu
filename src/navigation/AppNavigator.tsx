@@ -19,6 +19,7 @@ import UserDashboardScreen from '../presentation/screens/UserDashboardScreen';
 import AdminDashboardScreen from '../presentation/screens/AdminDashboardScreen';
 import CreateNotificationScreen from '../presentation/screens/CreateNotificationScreen';
 import ProfileScreen from '../presentation/screens/ProfileScreen';
+import SavedNotificationsScreen from '../presentation/screens/SavedNotificationsScreen';
 import { GroupsScreen } from '../presentation/screens/GroupsScreen';
 import { theme } from '../config/theme';
 
@@ -78,6 +79,10 @@ export const AppNavigator: React.FC = () => {
               name="Profile" 
               component={ProfileScreen}
             />
+            <Stack.Screen 
+              name="SavedNotifications" 
+              component={SavedNotificationsScreen}
+            />
           </>
         ) : (
           <>
@@ -85,6 +90,10 @@ export const AppNavigator: React.FC = () => {
               name="UserDashboard" 
               component={UserDashboardScreen}
               initialParams={{ user: user || undefined }}
+            />
+            <Stack.Screen 
+              name="SavedNotifications" 
+              component={SavedNotificationsScreen}
             />
             <Stack.Screen 
               name="Profile" 

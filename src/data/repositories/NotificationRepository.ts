@@ -171,4 +171,54 @@ export class NotificationRepository implements INotificationRepository {
       throw error;
     }
   }
+
+  async saveNotification(notificationId: string): Promise<void> {
+    try {
+      await this.apiClient.post(`/notification-user`, {
+        notification_id: notificationId,
+      });
+    } catch (error) {
+      console.error('Save notification error:', error);
+      throw error;
+    }
+  }
+
+  async unsaveNotification(notificationId: string): Promise<void> {
+    try {
+      await this.apiClient.delete(`/notification-user/${notificationId}`);
+    } catch (error) {
+      console.error('Unsave notification error:', error);
+      throw error;
+    }
+  }
+
+  async getSavedNotifications(): Promise<Notification[]> {
+    try {
+      console.log('📱 [NotificationRepository] Buscando notificações salvas...');
+      const response = await this.apiClient.get<{ data: Notification[] }>(
+        '/notification-user'
+      );
+
+      if (!response.data || !response.data.data) {
+        console.error('📱 [NotificationRepository] Estrutura de dados inválida:', response.data);
+        return [];
+      }
+
+      const notifications = response.data.data.map(notification => ({
+        ...notification,
+        createdAt: new Date(notification.createdAt),
+        updatedAt: new Date(notification.updatedAt),
+      }));
+
+      console.log('📱 [NotificationRepository] Notificações salvas processadas:', notifications.length);
+      return notifications;
+    } catch (error: any) {
+      console.error('📱 [NotificationRepository] Erro ao buscar notificações salvas:', {
+        message: error.message,
+        status: error.status,
+        response: error.response?.data
+      });
+      throw error;
+    }
+  }
 }
