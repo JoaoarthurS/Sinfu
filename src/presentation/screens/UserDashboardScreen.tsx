@@ -111,7 +111,7 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
             <Avatar
               imageUrl={user?.profileImageUrl}
               name={user?.name || 'U'}
-              size={32}
+              size={44}
             />
           </TouchableOpacity>
         </View>
@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   logo: {
-    height: 40, // maior
-    width: 140, // maior
+    height: 100, // maior
+    width: 125, // maior
   },
   headerActions: {
     flexDirection: 'row',

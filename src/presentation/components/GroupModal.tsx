@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   TouchableOpacity,
+  Switch,
   ScrollView,
   Alert,
 } from 'react-native';
@@ -32,16 +33,19 @@ export const GroupModal: React.FC<GroupModalProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('default');
+  const [isPublic, setIsPublic] = useState(true);
 
   useEffect(() => {
     if (group) {
       setName(group.name);
       setDescription(group.description || '');
       setType(group.type || 'default');
+      setIsPublic(group.isPublic ?? true);
     } else {
       setName('');
       setDescription('');
       setType('default');
+      setIsPublic(true);
     }
   }, [group, visible]);
 
@@ -55,6 +59,7 @@ export const GroupModal: React.FC<GroupModalProps> = ({
       name: name.trim(),
       description: description.trim() || undefined,
       type: type.trim() || 'default',
+      is_public: isPublic,
     });
 
     handleClose();
@@ -108,6 +113,25 @@ export const GroupModal: React.FC<GroupModalProps> = ({
               placeholder="Tipo do grupo"
               maxLength={100}
             />
+
+            <View style={styles.switchRow}>
+              <View style={styles.switchInfo}>
+                <Text style={styles.label}>
+                  {isPublic ? 'Público' : 'Privado'}
+                </Text>
+                <Text style={styles.switchDesc}>
+                  {isPublic
+                    ? 'Visível no cadastro de usuários'
+                    : 'Vinculação apenas por administradores'}
+                </Text>
+              </View>
+              <Switch
+                value={isPublic}
+                onValueChange={setIsPublic}
+                trackColor={{ false: '#ccc', true: theme.colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
           </ScrollView>
 
           <View style={styles.actions}>
@@ -115,11 +139,13 @@ export const GroupModal: React.FC<GroupModalProps> = ({
               title="Cancelar"
               onPress={handleClose}
               variant="secondary"
+              noShadow
               style={styles.button}
             />
             <CustomButton
               title={group ? 'Atualizar' : 'Criar'}
               onPress={handleSubmit}
+              noShadow
               style={styles.button}
             />
           </View>
@@ -177,5 +203,26 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     marginHorizontal: 5,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border || '#e0e0e0',
+    backgroundColor: theme.colors.card,
+  },
+  switchInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  switchDesc: {
+    fontSize: 12,
+    color: theme.colors.textSecondary || '#666',
+    marginTop: 2,
   },
 });

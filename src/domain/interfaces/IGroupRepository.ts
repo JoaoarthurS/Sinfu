@@ -7,6 +7,7 @@ import { Group, CreateGroupDTO, UpdateGroupDTO, NotifyGroupDTO } from '../entiti
 
 export interface IGroupRepository {
   getAll(): Promise<Group[]>;
+  getPublicGroups(): Promise<Group[]>;
   getById(id: string): Promise<Group | null>;
   create(group: CreateGroupDTO): Promise<Group>;
   update(group: UpdateGroupDTO): Promise<Group>;

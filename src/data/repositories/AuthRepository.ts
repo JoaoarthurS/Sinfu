@@ -6,7 +6,7 @@
 import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
 import { IApiClient } from '../../domain/interfaces/IApiClient';
 import { IStorageService } from '../../domain/interfaces/IStorageService';
-import { AuthCredentials, AuthResponse, User, UserRole } from '../../domain/entities/User';
+import { AuthCredentials, AuthResponse, RegisterData, User, UserRole } from '../../domain/entities/User';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../config/api.config';
 
 export class AuthRepository implements IAuthRepository {
@@ -54,6 +54,36 @@ export class AuthRepository implements IAuthRepository {
     }
   }
 
+  async register(data: RegisterData): Promise<void> {
+    try {
+      await this.apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.password,
+        ...(data.group_ids && data.group_ids.length > 0 ? { group_ids: data.group_ids } : {}),
+      });
+    } catch (error) {
+      console.error('Register error:', {
+        endpoint: API_ENDPOINTS.AUTH.REGISTER,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      await this.apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+    } catch (error) {
+      console.error('Forgot password error:', {
+        endpoint: API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
+        error,
+      });
+      throw error;
+    }
+  }
+
   /**
    * Mapeia o array de roles da API para um único valor de role
    * Se o usuário tem a role 'admin', retorna ADMIN, caso contrário USER
@@ -72,6 +102,7 @@ export class AuthRepository implements IAuthRepository {
       // Sempre limpar dados locais
       await this.storageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       await this.storageService.removeItem(STORAGE_KEYS.USER_DATA);
+      await this.storageService.removeItem(STORAGE_KEYS.AUTH_PORTAL);
       this.apiClient.removeAuthToken();
     }
   }

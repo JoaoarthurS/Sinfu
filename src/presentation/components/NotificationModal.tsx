@@ -13,8 +13,10 @@ import {
   TextInput,
   Alert,
   FlatList,
+  Image,
 } from 'react-native';
-import { Notification, NotificationPriority, CreateNotificationDTO } from '../../domain/entities/Notification';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { Notification, CreateNotificationDTO } from '../../domain/entities/Notification';
 import { Group } from '../../domain/entities/Group';
 import { CustomButton } from './CustomButton';
 import { theme } from '../../config/theme';
@@ -35,12 +37,14 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [priority, setPriority] = useState<NotificationPriority>(NotificationPriority.MEDIUM);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ title: '', message: '' });
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [showGroupSelection, setShowGroupSelection] = useState(false);
+  const [link, setLink] = useState('');
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (visible) {
@@ -48,7 +52,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
       if (notification) {
         setTitle(notification.title);
         setMessage(notification.message);
-        setPriority(notification.priority);
+        setLink(notification.link || '');
+        setCurrentImageUrl(notification.imageUrl);
       } else {
         resetForm();
       }
@@ -67,7 +72,9 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   const resetForm = () => {
     setTitle('');
     setMessage('');
-    setPriority(NotificationPriority.MEDIUM);
+    setLink('');
+    setSelectedImage(null);
+    setCurrentImageUrl(undefined);
     setErrors({ title: '', message: '' });
     setSelectedGroups([]);
     setShowGroupSelection(false);
@@ -97,6 +104,35 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
     return valid;
   };
 
+  const selectImage = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.8,
+      },
+      (response) => {
+        if (response.didCancel) {
+          return;
+        }
+        if (response.errorCode) {
+          Alert.alert('Erro', 'Não foi possível selecionar a imagem');
+          return;
+        }
+        if (response.assets && response.assets[0]) {
+          setSelectedImage(response.assets[0]);
+          setCurrentImageUrl(undefined); // Remove a URL da imagem atual
+        }
+      }
+    );
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setCurrentImageUrl(undefined);
+  };
+
   const handleSave = async () => {
     if (!validateForm()) {
       return;
@@ -107,11 +143,18 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
       const notificationData: CreateNotificationDTO = {
         title: title.trim(),
         message: message.trim(),
-        priority,
       };
 
       if (selectedGroups.length > 0) {
         notificationData.groupIds = selectedGroups;
+      }
+
+      if (link.trim()) {
+        notificationData.link = link.trim();
+      }
+
+      if (selectedImage) {
+        notificationData.image = selectedImage;
       }
 
       await onSave(notificationData);
@@ -146,28 +189,6 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
       return group ? group.name : '1 grupo selecionado';
     }
     return `${selectedGroups.length} grupos selecionados`;
-  };
-
-  const getPriorityColor = (p: NotificationPriority) => {
-    switch (p) {
-      case NotificationPriority.HIGH:
-        return theme.colors.danger;
-      case NotificationPriority.MEDIUM:
-        return theme.colors.warning;
-      case NotificationPriority.LOW:
-        return theme.colors.success;
-    }
-  };
-
-  const getPriorityLabel = (p: NotificationPriority) => {
-    switch (p) {
-      case NotificationPriority.HIGH:
-        return 'Alta';
-      case NotificationPriority.MEDIUM:
-        return 'Média';
-      case NotificationPriority.LOW:
-        return 'Baixa';
-    }
   };
 
   return (
@@ -226,86 +247,110 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Prioridade *</Text>
-              <View style={styles.priorityContainer}>
-                {Object.values(NotificationPriority).map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[
-                      styles.priorityButton,
-                      priority === p && styles.priorityButtonActive,
-                      {
-                        borderColor: getPriorityColor(p),
-                        backgroundColor: priority === p ? getPriorityColor(p) + '20' : 'transparent',
-                      },
-                    ]}
-                    onPress={() => setPriority(p)}
-                  >
-                    <Text
-                      style={[
-                        styles.priorityButtonText,
-                        { color: getPriorityColor(p) },
-                      ]}
-                    >
-                      {getPriorityLabel(p)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <Text style={styles.label}>Link (Opcional)</Text>
+              <TextInput
+                style={styles.input}
+                value={link}
+                onChangeText={setLink}
+                placeholder="https://example.com"
+                placeholderTextColor={theme.colors.textSecondary}
+                keyboardType="url"
+                autoCapitalize="none"
+              />
+              <Text style={styles.helperText}>URL que será aberta ao clicar na notificação</Text>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Destinatários</Text>
-              <TouchableOpacity
-                style={styles.groupSelector}
-                onPress={() => setShowGroupSelection(!showGroupSelection)}
-              >
-                <Text style={styles.groupSelectorText}>
-                  {getGroupSelectionText()}
-                </Text>
-                <Text style={styles.groupSelectorIcon}>
-                  {showGroupSelection ? '▲' : '▼'}
-                </Text>
-              </TouchableOpacity>
-
-              {showGroupSelection && (
-                <View style={styles.groupList}>
+              <Text style={styles.label}>Imagem (Opcional)</Text>
+              
+              {!selectedImage && !currentImageUrl ? (
+                <TouchableOpacity
+                  style={styles.imageButton}
+                  onPress={selectImage}
+                >
+                  <Text style={styles.imageButtonText}>📷 Selecionar Imagem da Galeria</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.imagePreviewContainer}>
+                  <Image
+                    source={{ uri: selectedImage ? selectedImage.uri : currentImageUrl }}
+                    style={styles.imagePreview}
+                    resizeMode="cover"
+                  />
                   <TouchableOpacity
-                    style={styles.groupItem}
-                    onPress={() => setSelectedGroups([])}
+                    style={styles.removeImageButton}
+                    onPress={removeImage}
                   >
-                    <View style={styles.checkbox}>
-                      {selectedGroups.length === 0 && <View style={styles.checkboxChecked} />}
-                    </View>
-                    <Text style={styles.groupItemText}>Todos os usuários</Text>
+                    <Text style={styles.removeImageText}>✕ Remover</Text>
                   </TouchableOpacity>
-                  {groups.map((group) => (
+                  {!selectedImage && currentImageUrl && (
                     <TouchableOpacity
-                      key={group.id}
-                      style={styles.groupItem}
-                      onPress={() => toggleGroupSelection(group.id)}
+                      style={styles.changeImageButton}
+                      onPress={selectImage}
                     >
-                      <View style={styles.checkbox}>
-                        {selectedGroups.includes(group.id) && (
-                          <View style={styles.checkboxChecked} />
-                        )}
-                      </View>
-                      <View style={{flex: 1}}>
-                        <Text style={styles.groupItemText}>{group.name}</Text>
-                        {group.description && (
-                          <Text style={styles.groupItemDescription}>
-                            {group.description}
-                          </Text>
-                        )}
-                        <Text style={styles.groupItemUsers}>
-                          {group.users?.length || 0} usuário(s)
-                        </Text>
-                      </View>
+                      <Text style={styles.changeImageText}>📷 Trocar Imagem</Text>
                     </TouchableOpacity>
-                  ))}
+                  )}
                 </View>
               )}
+              <Text style={styles.helperText}>A imagem será enviada para o servidor</Text>
             </View>
+
+            {/* Destinatários - Apenas visível ao criar nova notificação */}
+            {!notification && (
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Destinatários</Text>
+                <TouchableOpacity
+                  style={styles.groupSelector}
+                  onPress={() => setShowGroupSelection(!showGroupSelection)}
+                >
+                  <Text style={styles.groupSelectorText}>
+                    {getGroupSelectionText()}
+                  </Text>
+                  <Text style={styles.groupSelectorIcon}>
+                    {showGroupSelection ? '▲' : '▼'}
+                  </Text>
+                </TouchableOpacity>
+
+                {showGroupSelection && (
+                  <View style={styles.groupList}>
+                    <TouchableOpacity
+                      style={styles.groupItem}
+                      onPress={() => setSelectedGroups([])}
+                    >
+                      <View style={styles.checkbox}>
+                        {selectedGroups.length === 0 && <View style={styles.checkboxChecked} />}
+                      </View>
+                      <Text style={styles.groupItemText}>Todos os usuários</Text>
+                    </TouchableOpacity>
+                    {groups.map((group) => (
+                      <TouchableOpacity
+                        key={group.id}
+                        style={styles.groupItem}
+                        onPress={() => toggleGroupSelection(group.id)}
+                      >
+                        <View style={styles.checkbox}>
+                          {selectedGroups.includes(group.id) && (
+                            <View style={styles.checkboxChecked} />
+                          )}
+                        </View>
+                        <View style={{flex: 1}}>
+                          <Text style={styles.groupItemText}>{group.name}</Text>
+                          {group.description && (
+                            <Text style={styles.groupItemDescription}>
+                              {group.description}
+                            </Text>
+                          )}
+                          <Text style={styles.groupItemUsers}>
+                            {group.users?.length || 0} usuário(s)
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
           </ScrollView>
 
           <View style={styles.footer}>
@@ -313,6 +358,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               title="Cancelar"
               variant="secondary"
               onPress={handleClose}
+              noShadow
               style={styles.footerButton}
               disabled={loading}
             />
@@ -321,6 +367,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
               variant="primary"
               onPress={handleSave}
               loading={loading}
+              noShadow
               style={styles.footerButton}
             />
           </View>
@@ -410,6 +457,55 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'right',
     marginTop: theme.spacing.xs,
+  },
+  helperText: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  imageButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  imageButtonText: {
+    ...theme.typography.body,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  imagePreviewContainer: {
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    backgroundColor: theme.colors.backgroundSecondary,
+  },
+  removeImageButton: {
+    backgroundColor: theme.colors.danger,
+    paddingVertical: theme.spacing.sm,
+    alignItems: 'center',
+  },
+  removeImageText: {
+    ...theme.typography.bodySmall,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  changeImageButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm,
+    alignItems: 'center',
+  },
+  changeImageText: {
+    ...theme.typography.bodySmall,
+    color: '#fff',
+    fontWeight: '600',
   },
   priorityContainer: {
     flexDirection: 'row',

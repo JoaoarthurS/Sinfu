@@ -29,6 +29,11 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
 
+  const isInvalidCredentialsError = (error: any): boolean => {
+    const message = (error?.message || '').toLowerCase();
+    return error?.status === 401 || message.includes('credenciais') || message.includes('invalid');
+  };
+
   const validateForm = (): boolean => {
     let valid = true;
     const newErrors = { email: '', password: '' };
@@ -60,8 +65,13 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
 
     try {
       setLoading(true);
-      await signIn(email, password);
+      await signIn(email, password, 'admin');
     } catch (error: any) {
+      if (isInvalidCredentialsError(error)) {
+        setPassword('');
+        setErrors((prev) => ({ ...prev, password: '' }));
+      }
+
       Alert.alert(
         'Erro no Login',
         error.message || 'Não foi possível fazer login. Verifique suas credenciais.'
@@ -96,10 +106,9 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
               style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.backButtonText}>← Voltar</Text>
+              <Icon family="FontAwesome" name="arrow-left" size={24} color={theme.colors.textLight} />
             </TouchableOpacity>
-            
-            <Icon family="FontAwesome" name="user-tie" size={64} color="#fff" />
+            <Icon family="FontAwesome" name="user" size={64} color="#fff" />
             <Text style={styles.title}>Login Admin</Text>
             <Text style={styles.subtitle}>Acesso administrativo ao sistema</Text>
           </View>
@@ -181,18 +190,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
     position: 'relative',
+    backgroundColor: theme.colors.primary, // Fundo igual ao botão
+    borderBottomLeftRadius: theme.borderRadius.xl * 2,
+    borderBottomRightRadius: theme.borderRadius.xl * 2,
   },
   backButton: {
     position: 'absolute',
-    backgroundColor: theme.colors.primary,
     top: theme.spacing.md,
     left: theme.spacing.md,
     padding: theme.spacing.sm,
-  },
-  backButtonText: {
-    color: theme.colors.textLight,
-    fontSize: 16,
-    fontWeight: '500',
+    backgroundColor: 'transparent',
+    zIndex: 2,
   },
   title: {
     fontSize: 32,

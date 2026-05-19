@@ -80,7 +80,6 @@ export class NotificationRepository implements INotificationRepository {
         const formData = new FormData();
         formData.append('title', notification.title);
         formData.append('message', notification.message);
-        formData.append('priority', notification.priority);
         
         if (notification.groupIds && notification.groupIds.length > 0) {
           notification.groupIds.forEach((id, index) => {
@@ -136,10 +135,46 @@ export class NotificationRepository implements INotificationRepository {
 
   async update(notification: UpdateNotificationDTO): Promise<Notification> {
     try {
-      const response = await this.apiClient.put<Notification>(
-        `/notifications/${notification.id}`,
-        notification
-      );
+      let response;
+      
+      // Se houver uma imagem, enviar como FormData
+      if ((notification as any).image) {
+        const formData = new FormData();
+        
+        if (notification.title) {
+          formData.append('title', notification.title);
+        }
+        if (notification.message) {
+          formData.append('message', notification.message);
+        }
+        if ((notification as any).link) {
+          formData.append('link', (notification as any).link);
+        }
+        
+        // Adicionar imagem ao FormData
+        const imageFile = {
+          uri: (notification as any).image.uri,
+          type: (notification as any).image.type || 'image/jpeg',
+          name: (notification as any).image.fileName || 'notification_image.jpg',
+        };
+        formData.append('image', imageFile as any);
+        
+        response = await this.apiClient.post<Notification>(
+          `/notifications/${notification.id}?_method=PUT`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+      } else {
+        // Enviar como JSON normal (sem imagem)
+        response = await this.apiClient.put<Notification>(
+          `/notifications/${notification.id}`,
+          notification
+        );
+      }
 
       return {
         ...response.data,
@@ -154,9 +189,11 @@ export class NotificationRepository implements INotificationRepository {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('🗑️ [NotificationRepository] Deletando notificação:', id);
       await this.apiClient.delete(`/notifications/${id}`);
+      console.log('✅ [NotificationRepository] Notificação deletada com sucesso');
     } catch (error) {
-      console.error('Delete notification error:', error);
+      console.error('❌ [NotificationRepository] Delete notification error:', error);
       throw error;
     }
   }

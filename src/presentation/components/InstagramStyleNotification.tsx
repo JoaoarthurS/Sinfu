@@ -27,19 +27,6 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
   onUnsave,
 }) => {
   const [isSaved, setIsSaved] = useState(notification.saved || false);
-  const formatTime = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return 'Agora';
-    if (minutes < 60) return `Há ${minutes}m`;
-    if (hours < 24) return `Há ${hours}h`;
-    if (days === 1) return 'Há 1 dia';
-    return `Há ${days} dias`;
-  };
 
   const handleLinkPress = () => {
     if (notification.link) {
@@ -54,8 +41,6 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
       if (notification.link) {
         shareContent += `\n\n🔗 Link: ${notification.link}`;
       }
-      
-      shareContent += `\n\n⏰ ${formatTime(notification.createdAt)}`;
 
       const result = await Share.share({
         message: shareContent,
@@ -95,19 +80,6 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
     }
   };
 
-  const getPriorityColor = () => {
-    switch (notification.priority) {
-      case 'high':
-        return theme.colors.danger;
-      case 'medium':
-        return theme.colors.warning;
-      case 'low':
-        return theme.colors.success;
-      default:
-        return theme.colors.primary;
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -116,7 +88,6 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
           <Text style={styles.title} numberOfLines={1}>
             {notification.title}
           </Text>
-          <Text style={styles.time}>{formatTime(notification.createdAt)}</Text>
         </View>
       </View>
 
@@ -135,14 +106,14 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
       {/* Footer Actions */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <Icon family="Ionicons" name="paper-plane-outline" size={22} color={theme.colors.text} />
+          <Icon family="Ionicons" name="share-social-outline" size={18} color={theme.colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle}>
           <Icon 
             family="Ionicons" 
             name={isSaved ? "bookmark" : "bookmark-outline"} 
-            size={22} 
-            color={isSaved ? theme.colors.primary : theme.colors.text} 
+            size={18} 
+            color={isSaved ? theme.colors.primary : theme.colors.textSecondary} 
           />
         </TouchableOpacity>
       </View>

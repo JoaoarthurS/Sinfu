@@ -183,11 +183,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               icon: 'create-outline',
               onPress: () => setEditing(!editing),
             },
-            {
+            // Notificações Salvas apenas para usuários comuns (não admin)
+            ...(user?.role !== 'admin' ? [{
               label: 'Notificações Salvas',
               icon: 'bookmark-outline',
               onPress: () => navigation.navigate('SavedNotifications'),
-            },
+            }] : []),
             {
               label: 'Sair',
               icon: 'log-out-outline',
@@ -201,14 +202,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Foto de Perfil */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={editing ? handleSelectImage : undefined}
             disabled={!editing}
           >
             <Avatar
               imageUrl={selectedImage || user?.profileImageUrl}
               name={user?.name || 'U'}
-              size={120}
+              size={130}
             />
             {editing && (
               <View style={styles.editBadge}>
@@ -290,13 +291,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         {/* Informações adicionais */}
         {!editing && (
           <Card>
-            <View style={styles.field}>
-              <Text style={styles.label}>Tipo de Conta</Text>
-              <Text style={styles.value}>
-                {user?.role === 'admin' ? 'Administrador' : 'Usuário Comum'}
-              </Text>
-            </View>
-
             <View style={styles.field}>
               <Text style={styles.label}>Membro desde</Text>
               <Text style={styles.value}>

@@ -4,16 +4,21 @@
  */
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { Platform } from 'react-native';
-import { User } from '../../domain/entities/User';
+import { User, UserRole } from '../../domain/entities/User';
 import { container } from '../di/container';
 import { STORAGE_KEYS } from '../../config/api.config';
 import firebaseMessagingService from '../../data/services/FirebaseMessagingService';
+
+type AuthPortal = 'user' | 'admin';
 
 interface AuthContextData {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  currentPortal: AuthPortal;
+  signIn: (email: string, password: string, portal?: AuthPortal) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string, groupIds?: string[]) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -27,6 +32,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPortal, setCurrentPortal] = useState<AuthPortal>('user');
 
   useEffect(() => {
     loadStoredUser();
@@ -35,6 +41,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loadStoredUser = async () => {
     try {
       const storedUser = await container.authRepository.getCurrentUser();
+      const storedPortal = await container.storageService.getItem(STORAGE_KEYS.AUTH_PORTAL);
+      if (storedPortal === 'admin' || storedPortal === 'user') {
+        setCurrentPortal(storedPortal);
+      }
       
       if (storedUser) {
         const token = await container.storageService.getItem(STORAGE_KEYS.AUTH_TOKEN);
@@ -60,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Registra o token FCM no backend após login
    */
-  const registerDeviceToken = async (userId: number) => {
+  const registerDeviceToken = async (userId: string | number) => {
     try {
       // Obter o token FCM
       const fcmToken = await firebaseMessagingService.getToken();
@@ -76,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Enviar para API
       await container.apiClient.post('/device-token', {
         token: fcmToken,
-        user_id: userId,
+        user_id: Number(userId),
         platform: platform,
       });
 
@@ -90,10 +100,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, portal?: AuthPortal) => {
     try {
       setLoading(true);
       const response = await container.loginUseCase.execute({ email, password });
+
+      const requestedPortal = portal ?? (response.user.role === UserRole.ADMIN ? 'admin' : 'user');
+
+      // Segurança: apenas administradores podem usar o portal admin.
+      if (requestedPortal === 'admin' && response.user.role !== UserRole.ADMIN) {
+        await container.authRepository.logout();
+        setUser(null);
+        setCurrentPortal('user');
+        throw new Error('Acesso negado. Apenas administradores podem acessar o portal admin.');
+      }
+
+      await container.storageService.setItem(STORAGE_KEYS.AUTH_PORTAL, requestedPortal);
+      setCurrentPortal(requestedPortal);
+
       console.warn(response);
       setUser(response.user);
       
@@ -110,11 +134,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      await container.authRepository.forgotPassword(email);
+    } catch (error) {
+      console.error('Forgot password error:', {
+        context: 'AuthContext.forgotPassword',
+        error,
+      });
+      throw error;
+    }
+  };
+
+  const signUp = async (name: string, email: string, password: string, groupIds?: string[]) => {
+    try {
+      setLoading(true);
+
+      await container.authRepository.register({
+        name,
+        email,
+        password,
+        group_ids: groupIds,
+      });
+
+      const response = await container.loginUseCase.execute({ email, password });
+      setUser(response.user);
+      await registerDeviceToken(response.user.id);
+    } catch (error) {
+      console.error('Sign up error:', {
+        context: 'AuthContext.signUp',
+        error,
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       setLoading(true);
       await container.logoutUseCase.execute();
       setUser(null);
+      setCurrentPortal('user');
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
@@ -135,7 +197,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user,
         loading,
         isAuthenticated: !!user,
+        currentPortal,
         signIn,
+        forgotPassword,
+        signUp,
         signOut,
         updateUser,
       }}

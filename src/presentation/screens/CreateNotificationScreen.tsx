@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -22,16 +23,18 @@ import { CustomButton } from '../components/CustomButton';
 import { Card } from '../components/Card';
 import { theme } from '../../config/theme';
 import { container } from '../../core/di/container';
-import { NotificationPriority, CreateNotificationDTO } from '../../domain/entities/Notification';
+import { CreateNotificationDTO } from '../../domain/entities/Notification';
 import { Group } from '../../domain/entities/Group';
+import Icon from '../../core/components/Icon';
 
 const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ navigation }) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [priority, setPriority] = useState<NotificationPriority>(NotificationPriority.MEDIUM);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [groupsError, setGroupsError] = useState<string | null>(null);
   const [errors, setErrors] = useState({ title: '', message: '' });
   const [link, setLink] = useState('');
   const [selectedImage, setSelectedImage] = useState<any>(null);
@@ -42,10 +45,15 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
 
   const loadGroups = async () => {
     try {
+      setLoadingGroups(true);
+      setGroupsError(null);
       const groupsData = await container.getAllGroupsUseCase.execute();
       setGroups(groupsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading groups:', error);
+      setGroupsError(error?.message || 'Não foi possível carregar os grupos');
+    } finally {
+      setLoadingGroups(false);
     }
   };
 
@@ -110,7 +118,6 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
       const notificationData: CreateNotificationDTO = {
         title: title.trim(),
         message: message.trim(),
-        priority,
       };
 
       if (selectedGroups.length > 0) {
@@ -152,28 +159,6 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
     );
   };
 
-  const getPriorityColor = (p: NotificationPriority) => {
-    switch (p) {
-      case NotificationPriority.HIGH:
-        return theme.colors.danger;
-      case NotificationPriority.MEDIUM:
-        return theme.colors.warning;
-      case NotificationPriority.LOW:
-        return theme.colors.success;
-    }
-  };
-
-  const getPriorityLabel = (p: NotificationPriority) => {
-    switch (p) {
-      case NotificationPriority.HIGH:
-        return 'Alta';
-      case NotificationPriority.MEDIUM:
-        return 'Média';
-      case NotificationPriority.LOW:
-        return 'Baixa';
-    }
-  };
-
   const getRecipientsSummary = () => {
     if (selectedGroups.length === 0) {
       return 'Todos os usuários';
@@ -193,7 +178,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Voltar</Text>
+            <Icon family="FontAwesome" name="arrow-left" size={20} color={theme.colors.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Nova Notificação</Text>
         </View>
@@ -204,7 +189,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
           showsVerticalScrollIndicator={false}
         >
           <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>📝 Conteúdo</Text>
+            <Text style={styles.sectionTitle}>Conteúdo</Text>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Título *</Text>
@@ -243,9 +228,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
             </View>
           </Card>
 
-          <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>🔗 Link e Imagem (Opcional)</Text>
-            
+          <Card style={styles.card}> 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Link</Text>
               <TextInput
@@ -268,7 +251,10 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
                   style={styles.imageButton}
                   onPress={selectImage}
                 >
-                  <Text style={styles.imageButtonText}>📷 Selecionar Imagem da Galeria</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Icon family="FontAwesome" name="camera" size={18} color="#fff" />
+                    <Text style={styles.imageButtonText}>Selecionar Imagem da Galeria</Text>
+                  </View>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.imagePreviewContainer}>
@@ -286,35 +272,6 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
                 </View>
               )}
               <Text style={styles.helperText}>A imagem será enviada para o servidor</Text>
-            </View>
-          </Card>
-
-          <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>⚡ Prioridade</Text>
-            <View style={styles.priorityContainer}>
-              {Object.values(NotificationPriority).map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  style={[
-                    styles.priorityButton,
-                    priority === p && styles.priorityButtonActive,
-                    {
-                      borderColor: getPriorityColor(p),
-                      backgroundColor: priority === p ? getPriorityColor(p) + '20' : 'transparent',
-                    },
-                  ]}
-                  onPress={() => setPriority(p)}
-                >
-                  <Text
-                    style={[
-                      styles.priorityButtonText,
-                      { color: getPriorityColor(p) },
-                    ]}
-                  >
-                    {getPriorityLabel(p)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
             </View>
           </Card>
 
@@ -338,42 +295,49 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
             </TouchableOpacity>
 
             <View style={styles.groupsList}>
-              {groups.map((group) => (
-                <TouchableOpacity
-                  key={group.id}
-                  style={styles.groupItem}
-                  onPress={() => toggleGroupSelection(group.id)}
-                >
-                  <View style={styles.checkbox}>
-                    {selectedGroups.includes(group.id) && (
-                      <View style={styles.checkboxChecked} />
-                    )}
-                  </View>
-                  <View style={styles.groupInfo}>
-                    <Text style={styles.groupName}>{group.name}</Text>
-                    {group.description && (
-                      <Text style={styles.groupDescription}>{group.description}</Text>
-                    )}
-                    <Text style={styles.groupUsers}>
-                      {group.users?.length || 0} usuário(s)
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Card>
-
-          <Card style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>📊 Resumo</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Prioridade:</Text>
-              <Text style={[styles.summaryValue, { color: getPriorityColor(priority) }]}>
-                {getPriorityLabel(priority)}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Destinatários:</Text>
-              <Text style={styles.summaryValue}>{getRecipientsSummary()}</Text>
+              {loadingGroups ? (
+                <View style={styles.groupsStatusContainer}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                  <Text style={styles.groupsStatusText}>Carregando grupos...</Text>
+                </View>
+              ) : groupsError ? (
+                <View style={styles.groupsStatusContainer}>
+                  <Text style={styles.groupsErrorText}>{groupsError}</Text>
+                  <TouchableOpacity onPress={loadGroups} style={styles.retryButton}>
+                    <Text style={styles.retryButtonText}>Tentar novamente</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : groups.length === 0 ? (
+                <View style={styles.groupsStatusContainer}>
+                  <Text style={styles.groupsStatusText}>Nenhum grupo cadastrado</Text>
+                </View>
+              ) : (
+                groups.map((group) => (
+                  <TouchableOpacity
+                    key={group.id}
+                    style={[
+                      styles.groupItem,
+                      selectedGroups.includes(group.id) && styles.groupItemSelected,
+                    ]}
+                    onPress={() => toggleGroupSelection(group.id)}
+                  >
+                    <View style={styles.checkbox}>
+                      {selectedGroups.includes(group.id) && (
+                        <View style={styles.checkboxChecked} />
+                      )}
+                    </View>
+                    <View style={styles.groupInfo}>
+                      <Text style={styles.groupName}>{group.name}</Text>
+                      {group.description && (
+                        <Text style={styles.groupDescription}>{group.description}</Text>
+                      )}
+                      <Text style={styles.groupUsers}>
+                        {group.users?.length || 0} usuário(s)
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           </Card>
         </ScrollView>
@@ -383,6 +347,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
             title="Cancelar"
             variant="secondary"
             onPress={() => navigation.goBack()}
+            noShadow
             style={styles.footerButton}
             disabled={loading}
           />
@@ -391,6 +356,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
             variant="primary"
             onPress={handleCreate}
             loading={loading}
+            noShadow
             style={styles.footerButton}
           />
         </View>
@@ -408,22 +374,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
+    backgroundColor: theme.colors.surface,
   },
   backButton: {
-    marginBottom: theme.spacing.sm,
-  },
-  backButtonText: {
-    ...theme.typography.body,
-    color: theme.colors.primary,
-    fontWeight: '600',
+    marginRight: 12,
+    padding: 4,
   },
   headerTitle: {
     ...theme.typography.h2,
     color: theme.colors.text,
+    flex: 1,
+    textAlign: 'left',
   },
   content: {
     flex: 1,
@@ -538,25 +506,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  priorityContainer: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-  priorityButton: {
-    flex: 1,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  priorityButtonActive: {
-    borderWidth: 2,
-  },
-  priorityButtonText: {
-    ...theme.typography.bodySmall,
-    fontWeight: '600',
-  },
   selectAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -587,6 +536,37 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  groupItemSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '10',
+  },
+  groupsStatusContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  groupsStatusText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+  },
+  groupsErrorText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.danger,
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  retryButtonText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
   checkbox: {
     width: 24,

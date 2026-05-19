@@ -11,22 +11,26 @@ import { useAuth } from '../core/hooks/useAuth';
 import { UserRole } from '../domain/entities/User';
 
 // Importar telas
-import UserTypeSelectionScreen from '../presentation/screens/UserTypeSelectionScreen';
-import AdminLoginScreen from '../presentation/screens/AdminLoginScreen';
-import UserLoginScreen from '../presentation/screens/UserLoginScreen';
-import LoginScreen from '../presentation/screens/LoginScreen';
-import UserDashboardScreen from '../presentation/screens/UserDashboardScreen';
-import AdminDashboardScreen from '../presentation/screens/AdminDashboardScreen';
-import CreateNotificationScreen from '../presentation/screens/CreateNotificationScreen';
-import ProfileScreen from '../presentation/screens/ProfileScreen';
-import SavedNotificationsScreen from '../presentation/screens/SavedNotificationsScreen';
-import { GroupsScreen } from '../presentation/screens/GroupsScreen';
+import {
+  UserTypeSelectionScreen,
+  AdminLoginScreen,
+  UserLoginScreen,
+  UserRegisterScreen,
+  LoginScreen,
+  UserDashboardScreen,
+  AdminDashboardScreen,
+  CreateNotificationScreen,
+  ProfileScreen,
+  SavedNotificationsScreen,
+  GroupsScreen,
+  UsersManagementScreen,
+} from '../presentation/screens';
 import { theme } from '../config/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, currentPortal } = useAuth();
 
   if (loading) {
     return (
@@ -58,8 +62,12 @@ export const AppNavigator: React.FC = () => {
               name="UserLogin" 
               component={UserLoginScreen} 
             />
+            <Stack.Screen
+              name="UserRegister"
+              component={UserRegisterScreen}
+            />
           </>
-        ) : user?.role === UserRole.ADMIN ? (
+        ) : user?.role === UserRole.ADMIN && currentPortal === 'admin' ? (
           <>
             <Stack.Screen 
               name="AdminDashboard" 
@@ -70,6 +78,11 @@ export const AppNavigator: React.FC = () => {
               name="Groups" 
               component={GroupsScreen}
               options={{ headerShown: true, title: 'Grupos' }}
+            />
+            <Stack.Screen
+              name="UsersManagement"
+              component={UsersManagementScreen}
+              options={{ headerShown: true, title: 'Usuários' }}
             />
             <Stack.Screen 
               name="CreateNotification" 

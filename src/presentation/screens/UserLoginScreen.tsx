@@ -23,11 +23,16 @@ import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 
 const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
-  const { signIn } = useAuth();
+  const { signIn, forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
+
+  const isInvalidCredentialsError = (error: any): boolean => {
+    const message = (error?.message || '').toLowerCase();
+    return error?.status === 401 || message.includes('credenciais') || message.includes('invalid');
+  };
 
   const validateForm = (): boolean => {
     let valid = true;
@@ -60,11 +65,41 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
 
     try {
       setLoading(true);
-      await signIn(email, password);
+      await signIn(email, password, 'user');
     } catch (error: any) {
+      if (isInvalidCredentialsError(error)) {
+        setPassword('');
+        setErrors((prev) => ({ ...prev, password: '' }));
+      }
+
       Alert.alert(
         'Erro no Login',
         error.message || 'Não foi possível fazer login. Verifique suas credenciais.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setErrors((prev) => ({ ...prev, email: 'Informe seu email para recuperar a senha' }));
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrors((prev) => ({ ...prev, email: 'Email inválido' }));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await forgotPassword(email.trim());
+      Alert.alert('Recuperação de senha', 'Se o email existir, enviaremos as instruções de recuperação.');
+    } catch (error: any) {
+      Alert.alert(
+        'Erro',
+        error.message || 'Não foi possível enviar o link de recuperação agora.'
       );
     } finally {
       setLoading(false);
@@ -79,7 +114,7 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.secondary} />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -96,10 +131,9 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
               style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.backButtonText}>← Voltar</Text>
+              <Icon family="FontAwesome" name="arrow-left" size={24} color={theme.colors.textLight} />
             </TouchableOpacity>
-            
-            <Icon family="FontAwesome" name="bell" size={64} color="#fff" />
+            <Icon family="FontAwesome" name="user" size={64} color="#fff" />
             <Text style={styles.title}>Receber Notificações</Text>
             <Text style={styles.subtitle}>Mantenha-se informado com nossas notificações</Text>
           </View>
@@ -135,6 +169,13 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
                 error={errors.password}
               />
 
+              <TouchableOpacity
+                style={styles.forgotPasswordContainer}
+                onPress={handleForgotPassword}
+              >
+                <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+              </TouchableOpacity>
+
               <CustomButton
                 title="Começar a Receber"
                 onPress={handleLogin}
@@ -143,9 +184,15 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
                 style={styles.loginButton}
               />
 
+              <TouchableOpacity
+                style={styles.registerLinkContainer}
+                onPress={() => navigation.navigate('UserRegister')}
+              >
+                <Text style={styles.registerLinkText}>Ainda nao tem conta? Cadastre-se</Text>
+              </TouchableOpacity>
+
               {/* Benefits */}
               <View style={styles.benefitsSection}>
-                <Text style={styles.benefitsTitle}>Você receberá:</Text>
                 <View style={styles.benefitItem}>
                   <Icon family="FontAwesome" name="check-circle" size={16} color={theme.colors.success} />
                   <Text style={styles.benefitText}>Notificações importantes</Text>
@@ -184,7 +231,7 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSecondary,
+    backgroundColor: theme.colors.primary, 
   },
   keyboardView: {
     flex: 1,
@@ -198,21 +245,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
     position: 'relative',
+    backgroundColor: theme.colors.primary, // Fundo igual ao botão
+    borderBottomLeftRadius: theme.borderRadius.xl * 2,
+    borderBottomRightRadius: theme.borderRadius.xl * 2,
   },
   backButton: {
     position: 'absolute',
-    backgroundColor: theme.colors.secondary,
     top: theme.spacing.md,
     left: theme.spacing.md,
     padding: theme.spacing.sm,
-  },
-  backButtonText: {
-    color: theme.colors.textLight,
-    fontSize: 16,
-    fontWeight: '500',
+    backgroundColor: 'transparent',
+    zIndex: 2,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: theme.colors.textLight,
     marginBottom: theme.spacing.xs,
@@ -240,6 +286,24 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: theme.spacing.md,
+  },
+  forgotPasswordContainer: {
+    marginTop: theme.spacing.xs,
+    alignItems: 'flex-end',
+  },
+  forgotPasswordText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
+  registerLinkContainer: {
+    marginTop: theme.spacing.md,
+    alignItems: 'center',
+  },
+  registerLinkText: {
+    fontSize: 14,
+    color: theme.colors.primary,
+    fontWeight: '500',
   },
   benefitsSection: {
     marginTop: theme.spacing.xl,

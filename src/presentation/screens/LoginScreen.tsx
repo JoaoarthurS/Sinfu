@@ -27,6 +27,11 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
 
+  const isInvalidCredentialsError = (error: any): boolean => {
+    const message = (error?.message || '').toLowerCase();
+    return error?.status === 401 || message.includes('credenciais') || message.includes('invalid');
+  };
+
   const validateForm = (): boolean => {
     let valid = true;
     const newErrors = { email: '', password: '' };
@@ -61,6 +66,11 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
       await signIn(email, password);
       // Navegação é automática baseada no role do usuário
     } catch (error: any) {
+      if (isInvalidCredentialsError(error)) {
+        setPassword('');
+        setErrors((prev) => ({ ...prev, password: '' }));
+      }
+
       Alert.alert(
         'Erro no Login',
         error.message || 'Não foi possível fazer login. Verifique suas credenciais.'

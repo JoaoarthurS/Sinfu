@@ -137,16 +137,15 @@ export const GroupsScreen: React.FC = () => {
     <Card key={group.id} style={styles.groupCard}>
       <View style={styles.groupHeader}>
         <View style={styles.groupInfo}>
-          <Text style={styles.groupName}>{group.name}</Text>
+          <View style={styles.groupNameRow}>
+            <Text style={styles.groupName}>{group.name}</Text>
+            <View style={[styles.visibilityBadge, group.isPublic ? styles.badgePublic : styles.badgePrivate]}>
+              <Text style={styles.badgeText}>{group.isPublic ? 'Público' : 'Privado'}</Text>
+            </View>
+          </View>
           {group.description && (
             <Text style={styles.groupDescription}>{group.description}</Text>
           )}
-          <View style={styles.groupMeta}>
-            <Text style={styles.groupType}>Tipo: {group.type}</Text>
-            <Text style={styles.groupUsers}>
-              {group.users?.length || 0} usuários
-            </Text>
-          </View>
         </View>
       </View>
 
@@ -171,7 +170,7 @@ export const GroupsScreen: React.FC = () => {
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => handleDeleteGroup(group)}
         >
-          <Icon family="FontAwesome" name="trash-alt" size={12} color="#fff" style={styles.actionIcon} />
+          <Icon family="FontAwesome" name="trash" size={12} color="#fff" style={styles.actionIcon} />
           <Text style={styles.actionButtonText}>Excluir</Text>
         </TouchableOpacity>
       </View>
@@ -196,6 +195,7 @@ export const GroupsScreen: React.FC = () => {
         <CustomButton
           title="+ Novo Grupo"
           onPress={handleCreateGroup}
+          noShadow
           style={styles.newButton}
         />
       </View>
@@ -280,11 +280,32 @@ const styles = StyleSheet.create({
   groupInfo: {
     flex: 1,
   },
+  groupNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   groupName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: theme.colors.text,
-    marginBottom: 4,
+  },
+  visibilityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  badgePublic: {
+    backgroundColor: '#dcfce7',
+  },
+  badgePrivate: {
+    backgroundColor: '#f1f5f9',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
   },
   groupDescription: {
     fontSize: 14,
@@ -293,11 +314,7 @@ const styles = StyleSheet.create({
   },
   groupMeta: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  groupType: {
-    fontSize: 12,
-    color: theme.colors.textSecondary || '#666',
+    justifyContent: 'flex-end',
   },
   groupUsers: {
     fontSize: 12,

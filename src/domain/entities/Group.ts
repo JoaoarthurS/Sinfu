@@ -7,6 +7,7 @@ export interface Group {
   name: string;
   description?: string;
   type: string;
+  isPublic: boolean;
   users?: Array<{
     id: string;
     name: string;
@@ -20,6 +21,7 @@ export interface CreateGroupDTO {
   name: string;
   description?: string;
   type?: string;
+  is_public?: boolean;
   user_ids?: number[];
 }
 
@@ -28,6 +30,7 @@ export interface UpdateGroupDTO {
   name?: string;
   description?: string;
   type?: string;
+  is_public?: boolean;
   user_ids?: number[];
 }
 

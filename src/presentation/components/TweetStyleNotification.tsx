@@ -108,19 +108,6 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
     }
   };
 
-  const getPriorityColor = () => {
-    switch (notification.priority) {
-      case 'high':
-        return theme.colors.danger;
-      case 'medium':
-        return theme.colors.warning;
-      case 'low':
-        return theme.colors.success;
-      default:
-        return theme.colors.primary;
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}

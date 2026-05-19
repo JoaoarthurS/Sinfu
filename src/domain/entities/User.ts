@@ -24,6 +24,13 @@ export interface AuthCredentials {
   password: string;
 }
 
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  group_ids?: string[];
+}
+
 export interface AuthResponse {
   user: User;
   token: string;

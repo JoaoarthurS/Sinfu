@@ -104,11 +104,13 @@ export const NotifyGroupModal: React.FC<NotifyGroupModalProps> = ({
               title="Cancelar"
               onPress={handleClose}
               variant="secondary"
+              noShadow
               style={styles.button}
             />
             <CustomButton
               title="Enviar"
               onPress={handleSubmit}
+              noShadow
               style={styles.button}
             />
           </View>

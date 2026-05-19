@@ -9,9 +9,11 @@ export type RootStackParamList = {
   UserTypeSelection: undefined;
   AdminLogin: undefined;
   UserLogin: undefined;
+  UserRegister: undefined;
   Login: undefined; // Mantido para compatibilidade
   UserDashboard: { user: User };
   AdminDashboard: { user: User };
+  UsersManagement: undefined;
   Groups: undefined;
   CreateNotification: undefined;
   Profile: undefined;
@@ -21,9 +23,11 @@ export type RootStackParamList = {
 export type UserTypeSelectionScreenProps = NativeStackScreenProps<RootStackParamList, 'UserTypeSelection'>;
 export type AdminLoginScreenProps = NativeStackScreenProps<RootStackParamList, 'AdminLogin'>;
 export type UserLoginScreenProps = NativeStackScreenProps<RootStackParamList, 'UserLogin'>;
+export type UserRegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'UserRegister'>;
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export type UserDashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'UserDashboard'>;
 export type AdminDashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
+export type UsersManagementScreenProps = NativeStackScreenProps<RootStackParamList, 'UsersManagement'>;
 export type GroupsScreenProps = NativeStackScreenProps<RootStackParamList, 'Groups'>;
 export type CreateNotificationScreenProps = NativeStackScreenProps<RootStackParamList, 'CreateNotification'>;
 export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;

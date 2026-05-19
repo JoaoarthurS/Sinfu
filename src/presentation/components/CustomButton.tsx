@@ -17,6 +17,7 @@ interface CustomButtonProps extends TouchableOpacityProps {
   variant?: 'primary' | 'secondary' | 'danger';
   loading?: boolean;
   fullWidth?: boolean;
+  noShadow?: boolean;
 }
 
 export const CustomButton: React.FC<CustomButtonProps> = ({
@@ -24,12 +25,14 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   variant = 'primary',
   loading = false,
   fullWidth = false,
+  noShadow = false,
   style,
   disabled,
   ...props
 }) => {
   const buttonStyle = [
     styles.button,
+    !noShadow && styles.withShadow,
     styles[variant],
     fullWidth && styles.fullWidth,
     (disabled || loading) && styles.disabled,
@@ -67,6 +70,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
+  },
+  withShadow: {
     ...theme.shadows.sm,
   },
   primary: {

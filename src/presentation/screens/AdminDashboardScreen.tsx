@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminDashboardScreenProps } from '../../navigation/types';
@@ -21,11 +22,11 @@ import { CustomButton } from '../components/CustomButton';
 import { NotificationModal } from '../components/NotificationModal';
 import { theme } from '../../config/theme';
 import { container } from '../../core/di/container';
-import { Notification, NotificationPriority, CreateNotificationDTO } from '../../domain/entities/Notification';
+import { Notification, CreateNotificationDTO } from '../../domain/entities/Notification';
 import Icon from '../../core/components/Icon';
 
-const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navigation }) => {
-  const { user, signOut } = useAuth();
+const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -62,7 +63,6 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
         id: '1',
         title: 'Alerta de Sistema',
         message: 'Servidor principal com alta utilização de CPU (85%)',
-        priority: NotificationPriority.HIGH,
         read: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -71,7 +71,6 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
         id: '2',
         title: 'Novo usuário registrado',
         message: '5 novos usuários se registraram hoje',
-        priority: NotificationPriority.MEDIUM,
         read: false,
         createdAt: new Date(Date.now() - 30 * 60000),
         updatedAt: new Date(Date.now() - 30 * 60000),
@@ -80,7 +79,6 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
         id: '3',
         title: 'Backup concluído',
         message: 'Backup automático diário realizado com sucesso',
-        priority: NotificationPriority.LOW,
         read: true,
         createdAt: new Date(Date.now() - 2 * 3600000),
         updatedAt: new Date(Date.now() - 2 * 3600000),
@@ -89,8 +87,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
   };
 
   const handleCreateNotification = () => {
-    setSelectedNotification(undefined);
-    setModalVisible(true);
+    navigation.navigate('CreateNotification');
   };
 
   const handleEditNotification = (notification: Notification) => {
@@ -109,10 +106,13 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
           style: 'destructive',
           onPress: async () => {
             try {
-              await container.deleteNotificationUseCase.execute(notification.id);
+              console.log('🗑️ Deletando notificação:', notification.id);
+              await container.deleteNotificationUseCase.execute(String(notification.id));
+              console.log('✅ Notificação deletada com sucesso');
               Alert.alert('Sucesso', 'Notificação excluída com sucesso');
               await loadNotifications();
             } catch (error: any) {
+              console.error('❌ Erro ao deletar notificação:', error);
               Alert.alert('Erro', error.message || 'Não foi possível excluir a notificação');
             }
           },
@@ -141,56 +141,6 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sair',
-      'Deseja realmente sair da sua conta de administrador?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await signOut();
-            } catch (error) {
-              Alert.alert('Erro', 'Não foi possível sair. Tente novamente.');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const getPriorityColor = (priority: NotificationPriority) => {
-    switch (priority) {
-      case NotificationPriority.HIGH:
-        return theme.colors.danger;
-      case NotificationPriority.MEDIUM:
-        return theme.colors.warning;
-      case NotificationPriority.LOW:
-        return theme.colors.success;
-      default:
-        return theme.colors.textSecondary;
-    }
-  };
-
-  const getPriorityLabel = (priority: NotificationPriority) => {
-    switch (priority) {
-      case NotificationPriority.HIGH:
-        return 'Alta';
-      case NotificationPriority.MEDIUM:
-        return 'Média';
-      case NotificationPriority.LOW:
-        return 'Baixa';
-      default:
-        return priority;
-    }
-  };
-
   const getTimeAgo = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -206,30 +156,29 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
     return `${days}d atrás`;
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const highPriorityCount = notifications.filter(n => n.priority === NotificationPriority.HIGH && !n.read).length;
-
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.headerLeft}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <Avatar
-            imageUrl={user?.profileImageUrl}
-            name={user?.name || 'A'}
-            size={40}
-            style={{ marginRight: theme.spacing.sm }}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../assets/images/logo_branca_unimontes_hor.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
-          <View>
-            <Text style={styles.greeting}>Painel Admin</Text>
-            <Text style={styles.userName}>{user?.name || 'Administrador'}</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleLogout} disabled={loading}>
-          <Icon family="FontAwesome" name="sign-out-alt" size={28} color="#fff" />
-        </TouchableOpacity>
+        </View>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile')}
+            style={styles.iconButton}
+          >
+            <Avatar
+              imageUrl={user?.profileImageUrl}
+              name={user?.name || 'A'}
+              size={44}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -239,30 +188,13 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Alertas Críticos */}
-        {highPriorityCount > 0 && (
-          <View style={styles.alertBanner}>
-            <Icon family="FontAwesome" name="exclamation-triangle" size={24} color={theme.colors.danger} style={styles.alertIcon} />
-            <Text style={styles.alertText}>
-              {highPriorityCount} {highPriorityCount === 1 ? 'alerta crítico' : 'alertas críticos'} requer atenção
-            </Text>
-          </View>
-        )}
-
         {/* Estatísticas Administrativas */}
         <Card title="Painel de Controle">
           <View style={styles.statsGrid}>
             <View style={styles.statBox}>
-              <Icon family="FontAwesome" name="clipboard-list" size={32} color={theme.colors.primary} />
+              <Icon family="FontAwesome" name="bell" size={32} color={theme.colors.primary} />
               <Text style={styles.statNumber}>{notifications.length}</Text>
               <Text style={styles.statText}>Notificações</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Icon family="FontAwesome" name="circle" size={32} color={theme.colors.danger} />
-              <Text style={[styles.statNumber, styles.criticalStat]}>
-                {highPriorityCount}
-              </Text>
-              <Text style={styles.statText}>Críticas</Text>
             </View>
           </View>
         </Card>
@@ -303,11 +235,29 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
           />
         </Card>
 
+        {/* Botão Gerenciar Usuários */}
+        <Card>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardTitleContainer}>
+              <Icon family="FontAwesome" name="user-circle" size={20} color={theme.colors.primary} style={styles.cardTitleIcon} />
+              <Text style={styles.cardTitle}>Gerenciamento de Usuários</Text>
+            </View>
+          </View>
+          <Text style={styles.groupDescription}>
+            Cadastre, edite e exclua usuários diretamente pelo aplicativo
+          </Text>
+          <CustomButton
+            title="Gerenciar Usuários"
+            onPress={() => navigation.navigate('UsersManagement')}
+            style={styles.groupsButton}
+          />
+        </Card>
+
         {/* Gerenciar Notificações */}
         <Card>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>
-              Gerenciar Notificações ({notifications.length})
+              Gerenciar Notificações
             </Text>
             <TouchableOpacity 
               style={styles.createButton}
@@ -335,27 +285,11 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ route, navi
                     <Text style={styles.notificationTitle}>
                       {notification.title}
                     </Text>
-                    <View 
-                      style={[
-                        styles.priorityBadge,
-                        { backgroundColor: getPriorityColor(notification.priority) + '20' }
-                      ]}
-                    >
-                      <Text 
-                        style={[
-                          styles.priorityText,
-                          { color: getPriorityColor(notification.priority) }
-                        ]}
-                      >
-                        {getPriorityLabel(notification.priority)}
-                      </Text>
-                    </View>
                   </View>
                   <Text style={styles.notificationMessage}>
                     {notification.message}
                   </Text>
                   <View style={styles.notificationTimeContainer}>
-                    <Icon family="FontAwesome" name="clock" size={12} color={theme.colors.textSecondary} />
                     <Text style={styles.notificationTime}>
                       {getTimeAgo(notification.createdAt)}
                     </Text>
@@ -406,31 +340,40 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
+    alignItems: 'center', // já centraliza verticalmente
+    paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.admin,
-    ...theme.shadows.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: theme.colors.border,
+    height: 64,
   },
-  headerLeft: {
+  logoContainer: {
+    flex: 1,
+    justifyContent: 'center', // centraliza verticalmente
+    alignItems: 'flex-start', // mantém alinhamento à esquerda horizontalmente
+    height: '100%',
+  },
+  logo: {
+    height: 100,
+    width: 200,
+    marginTop: 9,
+    marginLeft: -35,
+  },
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.lg,
   },
-  adminIcon: {
-    marginRight: theme.spacing.xs,
-  },
-  greeting: {
-    ...theme.typography.h2,
-    color: theme.colors.textLight,
-  },
-  userName: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textLight,
-    opacity: 0.9,
+  iconButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     padding: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
   },
   alertBanner: {
     flexDirection: 'row',

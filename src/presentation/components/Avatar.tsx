@@ -2,7 +2,7 @@
  * Componente Avatar
  * Exibe a foto de perfil do usuário com fallback para iniciais
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
 import { theme } from '../../config/theme';
 
@@ -13,13 +13,14 @@ interface AvatarProps {
   style?: ViewStyle;
 }
 
-export const Avatar: React.FC<AvatarProps> = ({ 
-  imageUrl, 
-  name, 
+export const Avatar: React.FC<AvatarProps> = ({
+  imageUrl,
+  name,
   size = 50,
-  style 
+  style
 }) => {
-  // Pega as iniciais do nome
+  const [imageError, setImageError] = useState(false);
+
   const getInitials = (fullName: string): string => {
     const names = fullName.trim().split(' ');
     if (names.length === 1) {
@@ -31,20 +32,21 @@ export const Avatar: React.FC<AvatarProps> = ({
   const initials = getInitials(name);
   const avatarSize = { width: size, height: size, borderRadius: size / 2 };
 
-  // Se tem imagem, exibe a imagem
-  if (imageUrl && imageUrl.trim().length > 0) {
+  const hasValidImage = imageUrl && imageUrl.trim().length > 0 && !imageError;
+
+  if (hasValidImage) {
     return (
       <View style={[styles.container, avatarSize, style]}>
-        <Image 
-          source={{ uri: imageUrl }} 
-          style={[styles.image, avatarSize]}
+        <Image
+          source={{ uri: imageUrl! }}
+          style={styles.image}
           resizeMode="cover"
+          onError={() => setImageError(true)}
         />
       </View>
     );
   }
 
-  // Se não tem imagem, exibe as iniciais
   return (
     <View style={[styles.container, styles.placeholder, avatarSize, style]}>
       <Text style={[styles.initials, { fontSize: size * 0.4 }]}>
@@ -64,6 +66,11 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   placeholder: {
     backgroundColor: theme.colors.primary,
