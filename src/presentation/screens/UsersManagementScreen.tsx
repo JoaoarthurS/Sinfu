@@ -22,6 +22,9 @@ import Icon from '../../core/components/Icon';
 
 interface UsersApiResponse {
   data: any[];
+  current_page: number;
+  last_page: number;
+  total: number;
 }
 
 const mapApiUser = (apiUser: any): ManagedUser => ({
@@ -47,15 +50,23 @@ const UsersManagementScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | undefined>(undefined);
 
-  const loadUsers = async () => {
+  const loadUsers = async (targetPage = page) => {
     try {
       setLoading(true);
-      const response = await container.apiClient.get<UsersApiResponse>('/users');
+      const response = await container.apiClient.get<UsersApiResponse>('/users', {
+        params: { page: targetPage, per_page: 10 },
+      });
       const list = Array.isArray(response.data?.data) ? response.data.data.map(mapApiUser) : [];
       setUsers(list);
+      setPage(response.data?.current_page ?? targetPage);
+      setLastPage(response.data?.last_page ?? 1);
+      setTotal(response.data?.total ?? list.length);
     } catch (error: any) {
       console.error('Error loading users:', error);
       Alert.alert('Erro', extractErrorMessage(error));
@@ -65,14 +76,19 @@ const UsersManagementScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    loadUsers();
+    loadUsers(1);
   }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadUsers();
+    await loadUsers(1);
     setRefreshing(false);
   }, []);
+
+  const goToPage = (targetPage: number) => {
+    if (targetPage < 1 || targetPage > lastPage || targetPage === page || loading) return;
+    loadUsers(targetPage);
+  };
 
   const handleCreate = () => {
     setSelectedUser(undefined);
@@ -96,7 +112,8 @@ const UsersManagementScreen: React.FC = () => {
           onPress: async () => {
             try {
               await container.apiClient.delete(`/users/${user.id}`);
-              await loadUsers();
+              const isLastItemOnPage = users.length === 1 && page > 1;
+              await loadUsers(isLastItemOnPage ? page - 1 : page);
               Alert.alert('Sucesso', 'Usuario excluido com sucesso.');
             } catch (error: any) {
               Alert.alert('Erro', extractErrorMessage(error));
@@ -114,11 +131,12 @@ const UsersManagementScreen: React.FC = () => {
           name: payload.name,
           email: payload.email,
         });
+        await loadUsers(page);
       } else {
         await container.apiClient.post('/users', payload);
+        await loadUsers(1);
       }
 
-      await loadUsers();
       Alert.alert('Sucesso', selectedUser ? 'Usuario atualizado com sucesso.' : 'Usuario criado com sucesso.');
     } catch (error: any) {
       throw new Error(extractErrorMessage(error));
@@ -172,7 +190,7 @@ const UsersManagementScreen: React.FC = () => {
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => handleDelete(user)}
                 >
-                  <Icon family="FontAwesome" name="trash-alt" size={12} color="#fff" style={styles.actionIcon} />
+                  <Icon family="Feather" name="trash-2" size={12} color="#fff" style={styles.actionIcon} />
                   <Text style={styles.actionText}>Excluir</Text>
                 </TouchableOpacity>
               </View>
@@ -180,6 +198,30 @@ const UsersManagementScreen: React.FC = () => {
           ))
         )}
       </ScrollView>
+
+      {lastPage > 1 && (
+        <View style={styles.pagination}>
+          <TouchableOpacity
+            style={[styles.pageButton, page <= 1 && styles.pageButtonDisabled]}
+            onPress={() => goToPage(page - 1)}
+            disabled={page <= 1 || loading}
+          >
+            <Icon family="FontAwesome" name="chevron-left" size={12} color={page <= 1 ? theme.colors.textSecondary || '#999' : '#fff'} />
+          </TouchableOpacity>
+
+          <Text style={styles.pageInfo}>
+            Página {page} de {lastPage} • {total} usuário{total !== 1 ? 's' : ''}
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.pageButton, page >= lastPage && styles.pageButtonDisabled]}
+            onPress={() => goToPage(page + 1)}
+            disabled={page >= lastPage || loading}
+          >
+            <Icon family="FontAwesome" name="chevron-right" size={12} color={page >= lastPage ? theme.colors.textSecondary || '#999' : '#fff'} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <UserModal
         visible={modalVisible}
@@ -274,6 +316,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
+  },
+  pagination: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border || '#e0e0e0',
+  },
+  pageButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pageButtonDisabled: {
+    backgroundColor: theme.colors.backgroundSecondary || '#e0e0e0',
+  },
+  pageInfo: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.text,
   },
   emptyCard: {
     alignItems: 'center',
