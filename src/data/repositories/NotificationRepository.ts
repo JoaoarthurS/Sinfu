@@ -7,6 +7,7 @@ import { INotificationRepository } from '../../domain/interfaces/INotificationRe
 import { IApiClient } from '../../domain/interfaces/IApiClient';
 import { Notification, CreateNotificationDTO, UpdateNotificationDTO } from '../../domain/entities/Notification';
 import { API_ENDPOINTS } from '../../config/api.config';
+import { fixImageUrl } from '../../core/utils/fixImageUrl';
 
 export class NotificationRepository implements INotificationRepository {
   constructor(private apiClient: IApiClient) {}
@@ -33,6 +34,7 @@ export class NotificationRepository implements INotificationRepository {
 
       const notifications = response.data.data.map(notification => ({
         ...notification,
+        imageUrl: fixImageUrl(notification.imageUrl),
         createdAt: new Date(notification.createdAt),
         updatedAt: new Date(notification.updatedAt),
       }));
@@ -62,6 +64,7 @@ export class NotificationRepository implements INotificationRepository {
 
       return {
         ...response.data,
+        imageUrl: fixImageUrl(response.data.imageUrl),
         createdAt: new Date(response.data.createdAt),
         updatedAt: new Date(response.data.updatedAt),
       };
@@ -93,10 +96,10 @@ export class NotificationRepository implements INotificationRepository {
           });
         }
         
-        if (notification.link) {
-          formData.append('link', notification.link);
-        }
-        
+        // Sempre enviar o link (mesmo vazio) para que o backend consiga
+        // detectar remoção/alteração; uma string vazia é convertida para null.
+        formData.append('link', notification.link ?? '');
+
         // Adicionar imagem ao FormData
         const imageFile = {
           uri: notification.image.uri,
@@ -147,10 +150,10 @@ export class NotificationRepository implements INotificationRepository {
         if (notification.message) {
           formData.append('message', notification.message);
         }
-        if ((notification as any).link) {
-          formData.append('link', (notification as any).link);
-        }
-        
+        // Sempre enviar o link (mesmo vazio) para que o backend consiga
+        // detectar remoção/alteração; uma string vazia é convertida para null.
+        formData.append('link', (notification as any).link ?? '');
+
         // Adicionar imagem ao FormData
         const imageFile = {
           uri: (notification as any).image.uri,
@@ -243,6 +246,7 @@ export class NotificationRepository implements INotificationRepository {
 
       const notifications = response.data.data.map(notification => ({
         ...notification,
+        imageUrl: fixImageUrl(notification.imageUrl),
         createdAt: new Date(notification.createdAt),
         updatedAt: new Date(notification.updatedAt),
       }));

@@ -9,6 +9,7 @@ import { IStorageService } from '../../domain/interfaces/IStorageService';
 import { User, UserRole } from '../../domain/entities/User';
 import { UpdateProfileDTO } from '../../domain/entities/UpdateProfileDTO';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../config/api.config';
+import { fixImageUrl } from '../../core/utils/fixImageUrl';
 
 export class ProfileRepository implements IProfileRepository {
   constructor(
@@ -27,7 +28,7 @@ export class ProfileRepository implements IProfileRepository {
         email: apiUser.email,
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
-        profileImageUrl: apiUser.profile_image_url,
+        profileImageUrl: fixImageUrl(apiUser.profile_image_url),
         createdAt: new Date(apiUser.created_at),
         updatedAt: new Date(apiUser.updated_at),
       };
@@ -84,7 +85,7 @@ export class ProfileRepository implements IProfileRepository {
         email: apiUser.email,
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
-        profileImageUrl: apiUser.profile_image_url,
+        profileImageUrl: fixImageUrl(apiUser.profile_image_url),
         createdAt: new Date(apiUser.created_at),
         updatedAt: new Date(apiUser.updated_at),
       };
@@ -113,7 +114,7 @@ export class ProfileRepository implements IProfileRepository {
         email: apiUser.email,
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
-        profileImageUrl: apiUser.profile_image_url,
+        profileImageUrl: fixImageUrl(apiUser.profile_image_url),
         createdAt: new Date(apiUser.created_at),
         updatedAt: new Date(apiUser.updated_at),
       };
