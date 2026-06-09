@@ -2,7 +2,7 @@
  * Componente de Notificação estilo Tweet
  * Para notificações COM imagem
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,12 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isSaved, setIsSaved] = useState(notification.saved || false);
-  
+
+  useEffect(() => {
+    setIsSaved(notification.saved || false);
+  }, [notification.saved]);
+
+
   console.log('🖼️ [TweetStyleNotification] Renderizando notificação:', {
     id: notification.id,
     title: notification.title,

@@ -2,7 +2,8 @@
  * Tela de Notificações Salvas
  * Exibe apenas as notificações que o usuário salvou
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -29,9 +30,11 @@ const SavedNotificationsScreen: React.FC<SavedNotificationsScreenProps> = ({ nav
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
-  useEffect(() => {
-    loadSavedNotifications();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadSavedNotifications();
+    }, [])
+  );
 
   const loadSavedNotifications = async () => {
     try {

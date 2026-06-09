@@ -2,7 +2,7 @@
  * Componente de Notificação estilo Instagram Feed
  * Para notificações SEM imagem
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,10 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
   onUnsave,
 }) => {
   const [isSaved, setIsSaved] = useState(notification.saved || false);
+
+  useEffect(() => {
+    setIsSaved(notification.saved || false);
+  }, [notification.saved]);
 
   const handleLinkPress = () => {
     if (notification.link) {

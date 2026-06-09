@@ -143,14 +143,13 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
       const notificationData: CreateNotificationDTO = {
         title: title.trim(),
         message: message.trim(),
+        // Sempre enviar o link (mesmo vazio) para que o backend consiga
+        // detectar a remoção/alteração ao editar uma notificação existente.
+        link: link.trim(),
       };
 
       if (selectedGroups.length > 0) {
         notificationData.groupIds = selectedGroups;
-      }
-
-      if (link.trim()) {
-        notificationData.link = link.trim();
       }
 
       if (selectedImage) {

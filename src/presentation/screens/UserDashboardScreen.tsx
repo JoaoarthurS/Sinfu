@@ -2,7 +2,8 @@
  * Dashboard do Usuário Comum
  * Exibe notificações básicas e informações do perfil
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -32,9 +33,11 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
-  useEffect(() => {
-    loadNotifications();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [])
+  );
 
   const loadNotifications = async () => {
     try {
