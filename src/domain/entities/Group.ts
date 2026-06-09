@@ -39,4 +39,6 @@ export interface NotifyGroupDTO {
   title: string;
   body: string;
   data?: Record<string, any>;
+  link?: string;
+  image?: any; // Para upload de arquivo de imagem
 }

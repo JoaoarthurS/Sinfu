@@ -32,19 +32,16 @@ export const GroupModal: React.FC<GroupModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('default');
   const [isPublic, setIsPublic] = useState(true);
 
   useEffect(() => {
     if (group) {
       setName(group.name);
       setDescription(group.description || '');
-      setType(group.type || 'default');
       setIsPublic(group.isPublic ?? true);
     } else {
       setName('');
       setDescription('');
-      setType('default');
       setIsPublic(true);
     }
   }, [group, visible]);
@@ -58,7 +55,6 @@ export const GroupModal: React.FC<GroupModalProps> = ({
     onSubmit({
       name: name.trim(),
       description: description.trim() || undefined,
-      type: type.trim() || 'default',
       is_public: isPublic,
     });
 
@@ -68,7 +64,6 @@ export const GroupModal: React.FC<GroupModalProps> = ({
   const handleClose = () => {
     setName('');
     setDescription('');
-    setType('default');
     onClose();
   };
 
@@ -103,15 +98,6 @@ export const GroupModal: React.FC<GroupModalProps> = ({
               placeholder="Descrição do grupo (opcional)"
               multiline
               numberOfLines={3}
-            />
-
-            <Text style={styles.label}>Tipo</Text>
-            <TextInput
-              style={styles.input}
-              value={type}
-              onChangeText={setType}
-              placeholder="Tipo do grupo"
-              maxLength={100}
             />
 
             <View style={styles.switchRow}>

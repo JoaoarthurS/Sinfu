@@ -81,18 +81,51 @@ export class GroupRepository implements IGroupRepository {
 
   async notifyGroup(notifyData: NotifyGroupDTO): Promise<{ message: string; users_count: number; tokens_count: number }> {
     try {
-      const { groupId, ...payload } = notifyData;
-      const requestPayload = {
-        ...payload,
+      const { groupId, image, link, ...payload } = notifyData;
+      let response;
+
+      if (image) {
+        const formData = new FormData();
+        formData.append('title', payload.title);
+        formData.append('body', payload.body);
         // Backend NotificationRequest exige "filters" como obrigatório.
-        filters: {
-          groups: [groupId],
-        },
-      };
-      const response = await this.apiClient.post<{ message: string; users_count: number; tokens_count: number }>(
-        `/notify-group/${groupId}`,
-        requestPayload
-      );
+        formData.append('filters[groups][0]', groupId);
+
+        if (link) {
+          formData.append('link', link);
+        }
+
+        const imageFile = {
+          uri: image.uri,
+          type: image.type || 'image/jpeg',
+          name: image.fileName || 'notification_image.jpg',
+        };
+        formData.append('image', imageFile as any);
+
+        response = await this.apiClient.post<{ message: string; users_count: number; tokens_count: number }>(
+          `/notify-group/${groupId}`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+      } else {
+        const requestPayload = {
+          ...payload,
+          link,
+          // Backend NotificationRequest exige "filters" como obrigatório.
+          filters: {
+            groups: [groupId],
+          },
+        };
+        response = await this.apiClient.post<{ message: string; users_count: number; tokens_count: number }>(
+          `/notify-group/${groupId}`,
+          requestPayload
+        );
+      }
+
       return response.data;
     } catch (error) {
       console.error('Notify group error:', error);

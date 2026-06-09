@@ -114,7 +114,7 @@ export const GroupsScreen: React.FC = () => {
     }
   };
 
-  const handleSubmitNotification = async (title: string, body: string) => {
+  const handleSubmitNotification = async (title: string, body: string, link?: string, image?: any) => {
     if (!selectedGroup) return;
 
     try {
@@ -122,6 +122,8 @@ export const GroupsScreen: React.FC = () => {
         groupId: selectedGroup.id,
         title,
         body,
+        link,
+        image,
       });
       Alert.alert(
         'Sucesso',

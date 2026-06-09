@@ -11,7 +11,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { theme } from '../../config/theme';
 import { CustomButton } from './CustomButton';
 import { Group } from '../../domain/entities/Group';
@@ -19,7 +21,7 @@ import { Group } from '../../domain/entities/Group';
 interface NotifyGroupModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (title: string, body: string) => void;
+  onSubmit: (title: string, body: string, link?: string, image?: any) => void;
   group?: Group;
 }
 
@@ -31,13 +33,44 @@ export const NotifyGroupModal: React.FC<NotifyGroupModalProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [link, setLink] = useState('');
+  const [selectedImage, setSelectedImage] = useState<any>(null);
 
   useEffect(() => {
     if (!visible) {
       setTitle('');
       setBody('');
+      setLink('');
+      setSelectedImage(null);
     }
   }, [visible]);
+
+  const selectImage = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.8,
+      },
+      (response) => {
+        if (response.didCancel) {
+          return;
+        }
+        if (response.errorCode) {
+          Alert.alert('Erro', 'Não foi possível selecionar a imagem');
+          return;
+        }
+        if (response.assets && response.assets[0]) {
+          setSelectedImage(response.assets[0]);
+        }
+      }
+    );
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+  };
 
   const handleSubmit = () => {
     if (!title.trim()) {
@@ -50,13 +83,15 @@ export const NotifyGroupModal: React.FC<NotifyGroupModalProps> = ({
       return;
     }
 
-    onSubmit(title.trim(), body.trim());
+    onSubmit(title.trim(), body.trim(), link.trim() || undefined, selectedImage ?? undefined);
     handleClose();
   };
 
   const handleClose = () => {
     setTitle('');
     setBody('');
+    setLink('');
+    setSelectedImage(null);
     onClose();
   };
 
@@ -97,6 +132,34 @@ export const NotifyGroupModal: React.FC<NotifyGroupModalProps> = ({
               maxLength={500}
             />
             <Text style={styles.charCount}>{body.length}/500</Text>
+
+            <Text style={styles.label}>Link</Text>
+            <TextInput
+              style={styles.input}
+              value={link}
+              onChangeText={setLink}
+              placeholder="https://example.com"
+              keyboardType="url"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Imagem (opcional)</Text>
+            {!selectedImage ? (
+              <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
+                <Text style={styles.imageButtonText}>Selecionar Imagem</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.imagePreviewContainer}>
+                <Image
+                  source={{ uri: selectedImage.uri }}
+                  style={styles.imagePreview}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity style={styles.removeImageButton} onPress={removeImage}>
+                  <Text style={styles.removeImageText}>✕ Remover</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
 
           <View style={styles.actions}>
@@ -170,6 +233,38 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary || '#666',
     textAlign: 'right',
     marginTop: 4,
+  },
+  imageButton: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  imageButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  imagePreviewContainer: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.border || '#e0e0e0',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 160,
+    backgroundColor: theme.colors.card,
+  },
+  removeImageButton: {
+    backgroundColor: theme.colors.danger || '#dc2626',
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  removeImageText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
   },
   actions: {
     flexDirection: 'row',
