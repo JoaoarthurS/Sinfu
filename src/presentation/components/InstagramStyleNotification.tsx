@@ -109,16 +109,20 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
 
       {/* Footer Actions */}
       <View style={styles.footer}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle}>
+          <Icon
+            family="Ionicons"
+            name={isSaved ? "bookmark" : "bookmark-outline"}
+            size={18}
+            color={isSaved ? theme.colors.primary : theme.colors.textSecondary}
+          />
+          <Text style={[styles.actionButtonText, isSaved && styles.actionButtonTextActive]}>
+            {isSaved ? 'Salvo' : 'Salvar'}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
           <Icon family="Ionicons" name="share-social-outline" size={18} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle}>
-          <Icon 
-            family="Ionicons" 
-            name={isSaved ? "bookmark" : "bookmark-outline"} 
-            size={18} 
-            color={isSaved ? theme.colors.primary : theme.colors.textSecondary} 
-          />
+          <Text style={styles.actionButtonText}>Compartilhar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -178,11 +182,22 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
   },
   actionButton: {
-    padding: theme.spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  actionButtonText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+  },
+  actionButtonTextActive: {
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
 });

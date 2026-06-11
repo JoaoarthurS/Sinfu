@@ -26,6 +26,7 @@ import { container } from '../../core/di/container';
 import { CreateNotificationDTO } from '../../domain/entities/Notification';
 import { Group } from '../../domain/entities/Group';
 import Icon from '../../core/components/Icon';
+import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ navigation }) => {
   const [title, setTitle] = useState('');
@@ -51,7 +52,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
       setGroups(groupsData);
     } catch (error: any) {
       console.error('Error loading groups:', error);
-      setGroupsError(error?.message || 'Não foi possível carregar os grupos');
+      setGroupsError(getSessionErrorMessage(error));
     } finally {
       setLoadingGroups(false);
     }
@@ -145,7 +146,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
         ]
       );
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível criar a notificação');
+      Alert.alert('Erro', getSessionErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -165,7 +166,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
     }
     const totalUsers = selectedGroups.reduce((sum, groupId) => {
       const group = groups.find((g) => g.id === groupId);
-      return sum + (group?.users?.length || 0);
+      return sum + (group?.usersCount ?? group?.users?.length ?? 0);
     }, 0);
     return `${selectedGroups.length} grupo(s) • ${totalUsers} usuário(s)`;
   };
@@ -332,7 +333,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
                         <Text style={styles.groupDescription}>{group.description}</Text>
                       )}
                       <Text style={styles.groupUsers}>
-                        {group.users?.length || 0} usuário(s)
+                        {group.usersCount ?? group.users?.length ?? 0} usuário(s)
                       </Text>
                     </View>
                   </TouchableOpacity>

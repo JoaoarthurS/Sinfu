@@ -2,7 +2,7 @@
  * Tela de Perfil do Usuário
  * Permite visualizar e editar dados do perfil e foto
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileScreenProps } from '../../navigation/types';
@@ -24,18 +23,39 @@ import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { container } from '../../core/di/container';
+import { Group } from '../../domain/entities/Group';
+import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, updateUser, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
-  
+
   // Estados para edição
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Estados para grupos
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(
+    user?.groups?.map(g => g.id) || []
+  );
+  const [publicGroups, setPublicGroups] = useState<Group[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
+  // Carrega grupos públicos ao entrar no modo de edição
+  useEffect(() => {
+    if (editing) {
+      setSelectedGroupIds(user?.groups?.map(g => g.id) || []);
+      setLoadingGroups(true);
+      container.groupRepository.getPublicGroups()
+        .then(groups => setPublicGroups(groups))
+        .catch(() => {})
+        .finally(() => setLoadingGroups(false));
+    }
+  }, [editing]);
 
   const handleSelectImage = () => {
     launchImageLibrary(
@@ -55,6 +75,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           setSelectedImage(asset.uri || null);
         }
       }
+    );
+  };
+
+  const toggleGroup = (groupId: string) => {
+    setSelectedGroupIds(prev =>
+      prev.includes(groupId)
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId]
     );
   };
 
@@ -87,8 +115,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       const updateData: any = {
         name,
         email,
+        group_ids: selectedGroupIds,
       };
-      
+
       if (password) {
         updateData.password = password;
         updateData.password_confirmation = passwordConfirmation;
@@ -108,17 +137,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
       // Chamar use case de atualização
       const updatedUser = await container.updateProfileUseCase.execute(updateData);
-      
+
       // Atualizar contexto
       if (updateUser) {
         updateUser(updatedUser);
       }
-      
+
       // Limpar campos de senha
       setPassword('');
       setPasswordConfirmation('');
       setSelectedImage(null);
-      
+
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso', [
         {
           text: 'OK',
@@ -129,7 +158,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       ]);
     } catch (error: any) {
       console.error('Update profile error:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível atualizar o perfil');
+      Alert.alert('Erro', getSessionErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -141,6 +170,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setPassword('');
     setPasswordConfirmation('');
     setSelectedImage(null);
+    setSelectedGroupIds(user?.groups?.map(g => g.id) || []);
     setEditing(false);
   };
 
@@ -260,7 +290,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             <>
               <View style={styles.divider} />
               <Text style={styles.sectionTitle}>Alterar Senha (opcional)</Text>
-              
+
               <View style={styles.field}>
                 <Text style={styles.label}>Nova Senha</Text>
                 <TextInput
@@ -288,17 +318,81 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           )}
         </Card>
 
-        {/* Informações adicionais */}
+        {/* Informações adicionais + Grupos (somente visualização) */}
         {!editing && (
           <Card>
             <View style={styles.field}>
               <Text style={styles.label}>Membro desde</Text>
               <Text style={styles.value}>
-                {user?.createdAt 
-                  ? new Date(user.createdAt).toLocaleDateString('pt-BR') 
+                {user?.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString('pt-BR')
                   : '-'}
               </Text>
             </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Grupos</Text>
+              {user?.groups && user.groups.length > 0 ? (
+                <View style={styles.chipsContainer}>
+                  {user.groups.map(g => (
+                    <View key={g.id} style={styles.chip}>
+                      <Text style={styles.chipText}>{g.name}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>Nenhum grupo</Text>
+              )}
+            </View>
+          </Card>
+        )}
+
+        {/* Seleção de grupos públicos (modo edição) */}
+        {editing && (
+          <Card>
+            <Text style={styles.sectionTitle}>Grupos Públicos</Text>
+            <Text style={styles.groupsHint}>
+              Toque para entrar ou sair de um grupo público
+            </Text>
+
+            {loadingGroups ? (
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.primary}
+                style={styles.groupsLoader}
+              />
+            ) : publicGroups.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhum grupo público disponível</Text>
+            ) : (
+              <View style={styles.chipsContainer}>
+                {publicGroups.map(group => {
+                  const selected = selectedGroupIds.includes(group.id);
+                  return (
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[styles.chip, selected && styles.chipSelected]}
+                      onPress={() => toggleGroup(group.id)}
+                      activeOpacity={0.7}
+                    >
+                      {selected && (
+                        <Icon
+                          family="Ionicons"
+                          name="checkmark"
+                          size={14}
+                          color={theme.colors.surface}
+                          style={{ marginRight: 4 }}
+                        />
+                      )}
+                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                        {group.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </Card>
         )}
 
@@ -389,6 +483,11 @@ const styles = StyleSheet.create({
     ...theme.typography.body,
     color: theme.colors.text,
   },
+  emptyText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
   input: {
     ...theme.typography.body,
     backgroundColor: theme.colors.backgroundSecondary,
@@ -406,7 +505,44 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...theme.typography.h3,
     color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  groupsHint: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
     marginBottom: theme.spacing.md,
+  },
+  groupsLoader: {
+    marginTop: theme.spacing.md,
+    alignSelf: 'flex-start',
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  chipSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  chipText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.text,
+    fontWeight: '500',
+  },
+  chipTextSelected: {
+    color: theme.colors.surface,
   },
   actions: {
     flexDirection: 'row',

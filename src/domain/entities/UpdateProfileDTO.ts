@@ -11,4 +11,5 @@ export interface UpdateProfileDTO {
     type: string;
     name: string;
   };
+  group_ids?: string[];
 }

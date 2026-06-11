@@ -19,6 +19,7 @@ import { ManagedUser, UserModal, UserModalPayload } from '../components/UserModa
 import { container } from '../../core/di/container';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
+import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 interface UsersApiResponse {
   data: any[];
@@ -34,17 +35,6 @@ const mapApiUser = (apiUser: any): ManagedUser => ({
   groupsCount: Array.isArray(apiUser.groups) ? apiUser.groups.length : 0,
   createdAt: apiUser.created_at ? new Date(apiUser.created_at) : undefined,
 });
-
-const extractErrorMessage = (error: any): string => {
-  if (error?.errors) {
-    const firstKey = Object.keys(error.errors)[0];
-    if (firstKey && Array.isArray(error.errors[firstKey]) && error.errors[firstKey][0]) {
-      return error.errors[firstKey][0];
-    }
-  }
-
-  return error?.message || 'Operacao nao concluida.';
-};
 
 const UsersManagementScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -69,7 +59,7 @@ const UsersManagementScreen: React.FC = () => {
       setTotal(response.data?.total ?? list.length);
     } catch (error: any) {
       console.error('Error loading users:', error);
-      Alert.alert('Erro', extractErrorMessage(error));
+      Alert.alert('Erro', getSessionErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -116,7 +106,7 @@ const UsersManagementScreen: React.FC = () => {
               await loadUsers(isLastItemOnPage ? page - 1 : page);
               Alert.alert('Sucesso', 'Usuario excluido com sucesso.');
             } catch (error: any) {
-              Alert.alert('Erro', extractErrorMessage(error));
+              Alert.alert('Erro', getSessionErrorMessage(error));
             }
           },
         },
@@ -139,7 +129,7 @@ const UsersManagementScreen: React.FC = () => {
 
       Alert.alert('Sucesso', selectedUser ? 'Usuario atualizado com sucesso.' : 'Usuario criado com sucesso.');
     } catch (error: any) {
-      throw new Error(extractErrorMessage(error));
+      throw new Error(getSessionErrorMessage(error));
     }
   };
 

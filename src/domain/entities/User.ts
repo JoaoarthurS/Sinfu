@@ -7,6 +7,12 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
+export interface UserGroup {
+  id: string;
+  name: string;
+  isPublic: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -15,6 +21,7 @@ export interface User {
   profileImage?: string;
   profileImageUrl?: string;
   deviceToken?: string;
+  groups?: UserGroup[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -21,6 +21,7 @@ import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
+import { getErrorMessage } from '../../core/utils/errorHandler';
 
 const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
   const { signIn, forgotPassword } = useAuth();
@@ -67,14 +68,14 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
       setLoading(true);
       await signIn(email, password, 'user');
     } catch (error: any) {
-      if (isInvalidCredentialsError(error)) {
+      const isCredentialError = isInvalidCredentialsError(error);
+      if (isCredentialError) {
         setPassword('');
         setErrors((prev) => ({ ...prev, password: '' }));
       }
-
       Alert.alert(
         'Erro no Login',
-        error.message || 'Não foi possível fazer login. Verifique suas credenciais.'
+        isCredentialError ? 'E-mail ou senha incorretos.' : getErrorMessage(error)
       );
     } finally {
       setLoading(false);
@@ -97,10 +98,7 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
       await forgotPassword(email.trim());
       Alert.alert('Recuperação de senha', 'Se o email existir, enviaremos as instruções de recuperação.');
     } catch (error: any) {
-      Alert.alert(
-        'Erro',
-        error.message || 'Não foi possível enviar o link de recuperação agora.'
-      );
+      Alert.alert('Erro', getErrorMessage(error));
     } finally {
       setLoading(false);
     }

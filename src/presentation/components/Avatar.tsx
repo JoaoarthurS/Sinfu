@@ -2,7 +2,7 @@
  * Componente Avatar
  * Exibe a foto de perfil do usuário com fallback para iniciais
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
 import { theme } from '../../config/theme';
 
@@ -20,6 +20,11 @@ export const Avatar: React.FC<AvatarProps> = ({
   style
 }) => {
   const [imageError, setImageError] = useState(false);
+
+  // Reseta o erro ao trocar de URL (nova foto selecionada ou carregada após salvar)
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
 
   const getInitials = (fullName: string): string => {
     const names = fullName.trim().split(' ');

@@ -23,6 +23,7 @@ import { CustomButton } from '../components/CustomButton';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { container } from '../../core/di/container';
+import { getErrorMessage } from '../../core/utils/errorHandler';
 import { Group } from '../../domain/entities/Group';
 
 const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) => {
@@ -78,23 +79,23 @@ const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) =
     };
 
     if (!name.trim()) {
-      newErrors.name = 'Nome e obrigatorio';
+      newErrors.name = 'O nome é obrigatório';
       valid = false;
     }
 
     if (!email.trim()) {
-      newErrors.email = 'Email e obrigatorio';
+      newErrors.email = 'O e-mail é obrigatório';
       valid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Email invalido';
+      newErrors.email = 'Informe um e-mail válido';
       valid = false;
     }
 
     if (!password.trim()) {
-      newErrors.password = 'Senha e obrigatoria';
+      newErrors.password = 'A senha é obrigatória';
       valid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Senha deve ter no minimo 6 caracteres';
+      newErrors.password = 'A senha deve ter no mínimo 6 caracteres';
       valid = false;
     }
 
@@ -102,7 +103,7 @@ const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) =
       newErrors.confirmPassword = 'Confirme a senha';
       valid = false;
     } else if (confirmPassword !== password) {
-      newErrors.confirmPassword = 'As senhas nao conferem';
+      newErrors.confirmPassword = 'As senhas não conferem';
       valid = false;
     }
 
@@ -119,10 +120,7 @@ const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) =
       setLoading(true);
       await signUp(name.trim(), email.trim(), password, selectedGroupIds);
     } catch (error: any) {
-      Alert.alert(
-        'Erro no cadastro',
-        error.message || 'Nao foi possivel criar sua conta. Tente novamente.'
-      );
+      Alert.alert('Erro no cadastro', getErrorMessage(error));
     } finally {
       setLoading(false);
     }

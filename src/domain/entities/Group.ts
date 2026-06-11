@@ -13,6 +13,7 @@ export interface Group {
     name: string;
     email: string;
   }>;
+  usersCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }

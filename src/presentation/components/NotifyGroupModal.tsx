@@ -107,7 +107,7 @@ export const NotifyGroupModal: React.FC<NotifyGroupModalProps> = ({
           <Text style={styles.title}>Notificar Grupo</Text>
           {group && (
             <Text style={styles.groupName}>
-              {group.name} ({group.users?.length || 0} usuários)
+              {group.name} ({group.usersCount ?? group.users?.length ?? 0} usuários)
             </Text>
           )}
 

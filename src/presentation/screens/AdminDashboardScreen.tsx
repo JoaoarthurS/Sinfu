@@ -22,6 +22,7 @@ import { CustomButton } from '../components/CustomButton';
 import { NotificationModal } from '../components/NotificationModal';
 import { theme } from '../../config/theme';
 import { container } from '../../core/di/container';
+import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 import { Notification, CreateNotificationDTO } from '../../domain/entities/Notification';
 import Icon from '../../core/components/Icon';
 
@@ -113,7 +114,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
               await loadNotifications();
             } catch (error: any) {
               console.error('❌ Erro ao deletar notificação:', error);
-              Alert.alert('Erro', error.message || 'Não foi possível excluir a notificação');
+              Alert.alert('Erro', getSessionErrorMessage(error));
             }
           },
         },
@@ -137,7 +138,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
       }
       await loadNotifications();
     } catch (error: any) {
-      throw error;
+      Alert.alert('Erro', getSessionErrorMessage(error));
     }
   };
 

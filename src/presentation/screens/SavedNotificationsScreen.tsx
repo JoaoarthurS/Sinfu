@@ -23,6 +23,7 @@ import { TweetStyleNotification } from '../components/TweetStyleNotification';
 import { InstagramStyleNotification } from '../components/InstagramStyleNotification';
 import { Notification } from '../../domain/entities/Notification';
 import { container } from '../../core/di/container';
+import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 const SavedNotificationsScreen: React.FC<SavedNotificationsScreenProps> = ({ navigation }) => {
   const { user } = useAuth();
@@ -55,7 +56,7 @@ const SavedNotificationsScreen: React.FC<SavedNotificationsScreenProps> = ({ nav
         status: error.status,
         full: error
       });
-      Alert.alert('Erro', error.message || 'Não foi possível carregar as notificações salvas');
+      Alert.alert('Erro', getSessionErrorMessage(error));
     } finally {
       setLoadingNotifications(false);
     }

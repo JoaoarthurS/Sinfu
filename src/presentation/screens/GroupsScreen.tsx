@@ -23,6 +23,7 @@ import { theme } from '../../config/theme';
 import { container } from '../../core/di/container';
 import { Group, CreateGroupDTO } from '../../domain/entities/Group';
 import Icon from '../../core/components/Icon';
+import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 export const GroupsScreen: React.FC = () => {
   const { user } = useAuth();
@@ -44,7 +45,7 @@ export const GroupsScreen: React.FC = () => {
       setGroups(data);
     } catch (error) {
       console.error('Error loading groups:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os grupos');
+      Alert.alert('Erro', getSessionErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ export const GroupsScreen: React.FC = () => {
               loadGroups();
             } catch (error) {
               console.error('Error deleting group:', error);
-              Alert.alert('Erro', 'Não foi possível excluir o grupo');
+              Alert.alert('Erro', getSessionErrorMessage(error));
             }
           },
         },
@@ -110,7 +111,7 @@ export const GroupsScreen: React.FC = () => {
       loadGroups();
     } catch (error: any) {
       console.error('Error submitting group:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível salvar o grupo');
+      Alert.alert('Erro', getSessionErrorMessage(error));
     }
   };
 
@@ -131,7 +132,7 @@ export const GroupsScreen: React.FC = () => {
       );
     } catch (error: any) {
       console.error('Error notifying group:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível enviar a notificação');
+      Alert.alert('Erro', getSessionErrorMessage(error));
     }
   };
 

@@ -19,6 +19,7 @@ import { CustomInput } from '../components/CustomInput';
 import { CustomButton } from '../components/CustomButton';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
+import { getErrorMessage } from '../../core/utils/errorHandler';
 
 const LoginScreen: React.FC<LoginScreenProps> = () => {
   const { signIn } = useAuth();
@@ -66,14 +67,16 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
       await signIn(email, password);
       // Navegação é automática baseada no role do usuário
     } catch (error: any) {
-      if (isInvalidCredentialsError(error)) {
+      const isCredentialError = isInvalidCredentialsError(error);
+      if (isCredentialError) {
         setPassword('');
         setErrors((prev) => ({ ...prev, password: '' }));
       }
-
       Alert.alert(
         'Erro no Login',
-        error.message || 'Não foi possível fazer login. Verifique suas credenciais.'
+        isCredentialError
+          ? 'E-mail ou senha incorretos.'
+          : getErrorMessage(error)
       );
     } finally {
       setLoading(false);

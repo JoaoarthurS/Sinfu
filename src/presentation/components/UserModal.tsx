@@ -80,8 +80,8 @@ export const UserModal: React.FC<UserModalProps> = ({
     }
 
     if (!isEdit) {
-      if (!password || password.length < 8) {
-        Alert.alert('Erro', 'A senha deve ter no minimo 8 caracteres.');
+      if (!password || password.length < 6) {
+        Alert.alert('Erro', 'A senha deve ter no minimo 6 caracteres.');
         return;
       }
 
@@ -146,7 +146,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
-                  placeholder="Minimo de 8 caracteres"
+                  placeholder="Minimo de 6 caracteres"
                 />
 
                 <Text style={styles.label}>Confirmar senha</Text>

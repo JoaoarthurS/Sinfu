@@ -14,6 +14,7 @@ export class GroupRepository implements IGroupRepository {
     return {
       ...raw,
       isPublic: raw.is_public ?? raw.isPublic ?? true,
+      usersCount: raw.users_count ?? raw.usersCount ?? raw.users?.length,
       createdAt: new Date(raw.createdAt ?? raw.created_at),
       updatedAt: new Date(raw.updatedAt ?? raw.updated_at),
     };

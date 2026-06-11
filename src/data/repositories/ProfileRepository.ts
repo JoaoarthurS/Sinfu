@@ -6,7 +6,7 @@
 import { IProfileRepository } from '../../domain/interfaces/IProfileRepository';
 import { IApiClient } from '../../domain/interfaces/IApiClient';
 import { IStorageService } from '../../domain/interfaces/IStorageService';
-import { User, UserRole } from '../../domain/entities/User';
+import { User, UserRole, UserGroup } from '../../domain/entities/User';
 import { UpdateProfileDTO } from '../../domain/entities/UpdateProfileDTO';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../config/api.config';
 import { fixImageUrl } from '../../core/utils/fixImageUrl';
@@ -29,6 +29,7 @@ export class ProfileRepository implements IProfileRepository {
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
         profileImageUrl: fixImageUrl(apiUser.profile_image_url),
+        groups: this.mapGroups(apiUser.groups),
         createdAt: new Date(apiUser.created_at),
         updatedAt: new Date(apiUser.updated_at),
       };
@@ -67,6 +68,12 @@ export class ProfileRepository implements IProfileRepository {
         formData.append('profile_image', data.profile_image as any);
       }
 
+      if (data.group_ids !== undefined) {
+        data.group_ids.forEach((id, index) => {
+          formData.append(`group_ids[${index}]`, id);
+        });
+      }
+
       const response = await this.apiClient.post<any>(
         API_ENDPOINTS.PROFILE.UPDATE,
         formData,
@@ -86,6 +93,7 @@ export class ProfileRepository implements IProfileRepository {
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
         profileImageUrl: fixImageUrl(apiUser.profile_image_url),
+        groups: this.mapGroups(apiUser.groups),
         createdAt: new Date(apiUser.created_at),
         updatedAt: new Date(apiUser.updated_at),
       };
@@ -115,6 +123,7 @@ export class ProfileRepository implements IProfileRepository {
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
         profileImageUrl: fixImageUrl(apiUser.profile_image_url),
+        groups: this.mapGroups(apiUser.groups),
         createdAt: new Date(apiUser.created_at),
         updatedAt: new Date(apiUser.updated_at),
       };
@@ -129,10 +138,16 @@ export class ProfileRepository implements IProfileRepository {
     }
   }
 
-  /**
-   * Mapeia o array de roles da API para um único valor de role
-   */
   private mapRoleFromApi(roles: string[]): UserRole {
     return roles && roles.includes('admin') ? UserRole.ADMIN : UserRole.USER;
+  }
+
+  private mapGroups(groups: any[]): UserGroup[] {
+    if (!Array.isArray(groups)) return [];
+    return groups.map(g => ({
+      id: g.id,
+      name: g.name,
+      isPublic: g.is_public ?? g.isPublic ?? false,
+    }));
   }
 }
