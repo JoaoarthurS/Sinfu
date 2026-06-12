@@ -10,6 +10,7 @@ export type RootStackParamList = {
   AdminLogin: undefined;
   UserLogin: undefined;
   UserRegister: undefined;
+  ForgotPassword: undefined;
   Login: undefined; // Mantido para compatibilidade
   UserDashboard: { user: User };
   AdminDashboard: { user: User };
@@ -24,6 +25,7 @@ export type UserTypeSelectionScreenProps = NativeStackScreenProps<RootStackParam
 export type AdminLoginScreenProps = NativeStackScreenProps<RootStackParamList, 'AdminLogin'>;
 export type UserLoginScreenProps = NativeStackScreenProps<RootStackParamList, 'UserLogin'>;
 export type UserRegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'UserRegister'>;
+export type ForgotPasswordScreenProps = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export type UserDashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'UserDashboard'>;
 export type AdminDashboardScreenProps = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;

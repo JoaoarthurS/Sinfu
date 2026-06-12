@@ -16,6 +16,7 @@ import {
   AdminLoginScreen,
   UserLoginScreen,
   UserRegisterScreen,
+  ForgotPasswordScreen,
   LoginScreen,
   UserDashboardScreen,
   AdminDashboardScreen,
@@ -65,6 +66,10 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="UserRegister"
               component={UserRegisterScreen}
+            />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
             />
           </>
         ) : user?.role === UserRole.ADMIN && currentPortal === 'admin' ? (

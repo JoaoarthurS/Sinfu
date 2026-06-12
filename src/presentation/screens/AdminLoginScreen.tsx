@@ -145,6 +145,13 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
                 error={errors.password}
               />
 
+              <TouchableOpacity
+                style={styles.forgotPasswordContainer}
+                onPress={() => navigation.navigate('ForgotPassword')}
+              >
+                <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+              </TouchableOpacity>
+
               <CustomButton
                 title="Entrar como Admin"
                 onPress={handleLogin}
@@ -230,6 +237,15 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: theme.spacing.md,
+  },
+  forgotPasswordContainer: {
+    marginTop: theme.spacing.xs,
+    alignItems: 'flex-end',
+  },
+  forgotPasswordText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontWeight: '500',
   },
   demoSection: {
     marginTop: theme.spacing.xl,

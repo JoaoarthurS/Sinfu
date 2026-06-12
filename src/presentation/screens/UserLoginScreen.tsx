@@ -24,7 +24,7 @@ import Icon from '../../core/components/Icon';
 import { getErrorMessage } from '../../core/utils/errorHandler';
 
 const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
-  const { signIn, forgotPassword } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,26 +82,8 @@ const UserLoginScreen: React.FC<UserLoginScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      setErrors((prev) => ({ ...prev, email: 'Informe seu email para recuperar a senha' }));
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErrors((prev) => ({ ...prev, email: 'Email inválido' }));
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await forgotPassword(email.trim());
-      Alert.alert('Recuperação de senha', 'Se o email existir, enviaremos as instruções de recuperação.');
-    } catch (error: any) {
-      Alert.alert('Erro', getErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
   };
 
   const fillDemoCredentials = () => {

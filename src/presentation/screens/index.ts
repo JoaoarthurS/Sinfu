@@ -2,6 +2,7 @@ export { default as UserTypeSelectionScreen } from './UserTypeSelectionScreen';
 export { default as AdminLoginScreen } from './AdminLoginScreen';
 export { default as UserLoginScreen } from './UserLoginScreen';
 export { default as UserRegisterScreen } from './UserRegisterScreen';
+export { default as ForgotPasswordScreen } from './ForgotPasswordScreen';
 export { default as LoginScreen } from './LoginScreen';
 export { default as UserDashboardScreen } from './UserDashboardScreen';
 export { default as AdminDashboardScreen } from './AdminDashboardScreen';
