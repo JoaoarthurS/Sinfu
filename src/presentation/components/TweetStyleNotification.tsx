@@ -9,7 +9,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Linking,
-  Share,
   Alert,
 } from 'react-native';
 import { theme } from '../../config/theme';
@@ -17,6 +16,7 @@ import Icon from '../../core/components/Icon';
 import { Notification } from '../../domain/entities/Notification';
 import { AuthenticatedImage } from './AuthenticatedImage';
 import { container } from '../../core/di/container';
+import { shareNotification } from '../../core/utils/shareNotification';
 
 interface TweetStyleNotificationProps {
   notification: Notification;
@@ -63,30 +63,7 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
 
   const handleShare = async () => {
     try {
-      let shareContent = `📢 ${notification.title}\n\n${notification.message}`;
-      
-      if (notification.imageUrl) {
-        shareContent += `\n\n🖼️ Imagem: ${notification.imageUrl}`;
-      }
-      
-      if (notification.link) {
-        shareContent += `\n\n🔗 Link: ${notification.link}`;
-      }
-      
-      shareContent += `\n\n⏰ ${formatTime(notification.createdAt)}`;
-
-      const result = await Share.share({
-        message: shareContent,
-        title: notification.title,
-      });
-
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.log('Compartilhado via:', result.activityType);
-        } else {
-          console.log('Conteúdo compartilhado');
-        }
-      }
+      await shareNotification(notification);
     } catch (error: any) {
       Alert.alert('Erro', 'Não foi possível compartilhar o conteúdo');
       console.error('Erro ao compartilhar:', error);
@@ -165,17 +142,17 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
       {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerButton} onPress={handleSaveToggle}>
-          <Icon 
-            family="Ionicons" 
-            name={isSaved ? "bookmark" : "bookmark-outline"} 
-            size={18} 
-            color={isSaved ? theme.colors.primary : theme.colors.textSecondary} 
+          <Icon
+            family="Ionicons"
+            name={isSaved ? "bookmark" : "bookmark-outline"}
+            size={18}
+            color={isSaved ? theme.colors.primary : theme.colors.textSecondary}
           />
           <Text style={[styles.footerButtonText, isSaved && styles.footerButtonTextActive]}>
             {isSaved ? 'Salvo' : 'Salvar'}
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.footerButton} onPress={handleShare}>
           <Icon family="Ionicons" name="share-social-outline" size={18} color={theme.colors.textSecondary} />
           <Text style={styles.footerButtonText}>Compartilhar</Text>
@@ -267,6 +244,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     marginTop: theme.spacing.sm,
     paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: theme.colors.divider,
   },

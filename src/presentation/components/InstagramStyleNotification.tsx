@@ -9,13 +9,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Linking,
-  Share,
   Alert,
 } from 'react-native';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { Notification } from '../../domain/entities/Notification';
 import { container } from '../../core/di/container';
+import { shareNotification } from '../../core/utils/shareNotification';
 
 interface InstagramStyleNotificationProps {
   notification: Notification;
@@ -40,24 +40,7 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
 
   const handleShare = async () => {
     try {
-      let shareContent = `📢 ${notification.title}\n\n${notification.message}`;
-      
-      if (notification.link) {
-        shareContent += `\n\n🔗 Link: ${notification.link}`;
-      }
-
-      const result = await Share.share({
-        message: shareContent,
-        title: notification.title,
-      });
-
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.log('Compartilhado via:', result.activityType);
-        } else {
-          console.log('Conteúdo compartilhado');
-        }
-      }
+      await shareNotification(notification);
     } catch (error: any) {
       Alert.alert('Erro', 'Não foi possível compartilhar o conteúdo');
       console.error('Erro ao compartilhar:', error);
@@ -184,6 +167,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     marginTop: theme.spacing.sm,
     paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: theme.colors.divider,
   },
