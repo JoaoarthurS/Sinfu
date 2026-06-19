@@ -101,8 +101,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signIn = async (email: string, password: string, portal?: AuthPortal) => {
+    // Não usar o estado global `loading` aqui: ele desmonta todo o navigator
+    // (ver AppNavigator) e, ao alternar true/false em um login com erro, remonta
+    // a navegação resetando para a tela inicial. A tela de login controla seu
+    // próprio loading local. O navigator só deve trocar quando o usuário muda.
     try {
-      setLoading(true);
       const response = await container.loginUseCase.execute({ email, password });
 
       const requestedPortal = portal ?? (response.user.role === UserRole.ADMIN ? 'admin' : 'user');
@@ -112,15 +115,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await container.authRepository.logout();
         setUser(null);
         setCurrentPortal('user');
-        throw new Error('Acesso negado. Apenas administradores podem acessar o portal admin.');
+        const accessError: any = new Error('Usuário sem permissão para acessar esta área.');
+        accessError.code = 'ADMIN_ACCESS_DENIED';
+        throw accessError;
       }
 
       await container.storageService.setItem(STORAGE_KEYS.AUTH_PORTAL, requestedPortal);
       setCurrentPortal(requestedPortal);
 
-      console.warn(response);
       setUser(response.user);
-      
+
       // Registrar token FCM após login bem-sucedido
       await registerDeviceToken(response.user.id);
     } catch (error) {
@@ -129,8 +133,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -147,9 +149,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signUp = async (name: string, email: string, password: string, groupIds?: string[]) => {
+    // Mesmo motivo do signIn: não usar o `loading` global, que remontaria o
+    // navigator e resetaria a navegação em caso de erro no cadastro.
     try {
-      setLoading(true);
-
       await container.authRepository.register({
         name,
         email,
@@ -166,8 +168,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error,
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -187,7 +187,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...userData });
+      // Uma atualização de perfil nunca deve alterar o papel (role) do usuário
+      // logado. Caso a API não retorne os papéis, preservamos o role atual para
+      // evitar que o admin seja rebaixado e a navegação troque de stack.
+      setUser({ ...user, ...userData, role: user.role });
     }
   };
 

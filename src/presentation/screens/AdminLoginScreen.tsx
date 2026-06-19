@@ -35,6 +35,15 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
     return error?.status === 401 || message.includes('credenciais') || message.includes('invalid');
   };
 
+  const isAccessDeniedError = (error: any): boolean => {
+    const message = (error?.message || '').toLowerCase();
+    return (
+      error?.code === 'ADMIN_ACCESS_DENIED' ||
+      message.includes('permissão') ||
+      message.includes('acesso negado')
+    );
+  };
+
   const validateForm = (): boolean => {
     let valid = true;
     const newErrors = { email: '', password: '' };
@@ -73,9 +82,19 @@ const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ navigation }) => {
         setPassword('');
         setErrors((prev) => ({ ...prev, password: '' }));
       }
+
+      let message: string;
+      if (isAccessDeniedError(error)) {
+        message = 'Usuário sem permissão para acessar esta área.';
+      } else if (isCredentialError) {
+        message = 'E-mail ou senha incorretos.';
+      } else {
+        message = getErrorMessage(error);
+      }
+
       Alert.alert(
-        'Erro no Login',
-        isCredentialError ? 'E-mail ou senha incorretos.' : getErrorMessage(error)
+        isAccessDeniedError(error) ? 'Acesso negado' : 'Erro no Login',
+        message
       );
     } finally {
       setLoading(false);
