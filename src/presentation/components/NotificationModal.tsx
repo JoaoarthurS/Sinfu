@@ -21,6 +21,7 @@ import { Group } from '../../domain/entities/Group';
 import { CustomButton } from './CustomButton';
 import { theme } from '../../config/theme';
 import { container } from '../../core/di/container';
+import Icon from '../../core/components/Icon';
 
 interface NotificationModalProps {
   visible: boolean;
@@ -131,6 +132,10 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   const removeImage = () => {
     setSelectedImage(null);
     setCurrentImageUrl(undefined);
+  };
+
+  const removeLink = () => {
+    setLink('');
   };
 
   const handleSave = async () => {
@@ -247,15 +252,26 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Link (Opcional)</Text>
-              <TextInput
-                style={styles.input}
-                value={link}
-                onChangeText={setLink}
-                placeholder="https://example.com"
-                placeholderTextColor={theme.colors.textSecondary}
-                keyboardType="url"
-                autoCapitalize="none"
-              />
+              <View style={styles.linkInputRow}>
+                <TextInput
+                  style={[styles.input, styles.linkInput]}
+                  value={link}
+                  onChangeText={setLink}
+                  placeholder="https://example.com"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  keyboardType="url"
+                  autoCapitalize="none"
+                />
+                {link.trim().length > 0 && (
+                  <TouchableOpacity
+                    style={styles.removeLinkButton}
+                    onPress={removeLink}
+                    accessibilityLabel="Remover link"
+                  >
+                    <Text style={styles.removeLinkText}>✕ Remover</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <Text style={styles.helperText}>URL que será aberta ao clicar na notificação</Text>
             </View>
 
@@ -267,7 +283,10 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                   style={styles.imageButton}
                   onPress={selectImage}
                 >
-                  <Text style={styles.imageButtonText}>📷 Selecionar Imagem da Galeria</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Icon family="FontAwesome" name="camera" size={18} color="#fff" />
+                    <Text style={styles.imageButtonText}>Selecionar Imagem da Galeria</Text>
+                  </View>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.imagePreviewContainer}>
@@ -461,6 +480,27 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
+  },
+  linkInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  linkInput: {
+    flex: 1,
+  },
+  removeLinkButton: {
+    backgroundColor: theme.colors.danger,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeLinkText: {
+    ...theme.typography.bodySmall,
+    color: '#fff',
+    fontWeight: '600',
   },
   imageButton: {
     backgroundColor: theme.colors.primary,
