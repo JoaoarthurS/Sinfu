@@ -12,7 +12,6 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -93,16 +92,35 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun getBitmapFromUrl(imageUrl: String): Bitmap? {
+        var connection: HttpURLConnection? = null
         return try {
             val url = URL(imageUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.doInput = true
+            connection = (url.openConnection() as HttpURLConnection).apply {
+                instanceFollowRedirects = true
+                connectTimeout = 15000
+                readTimeout = 15000
+                doInput = true
+                // Accept de imagem (sem text/html) e header de bypass evitam que
+                // proxies como o ngrok devolvam uma pagina HTML de aviso no lugar
+                // da imagem. UA proprio em vez do padrao "Java/...".
+                setRequestProperty("Accept", "image/*")
+                setRequestProperty("User-Agent", "SinfuApp-Android")
+                setRequestProperty("ngrok-skip-browser-warning", "true")
+            }
             connection.connect()
-            val input = connection.inputStream
-            BitmapFactory.decodeStream(input)
-        } catch (e: IOException) {
+
+            if (connection.responseCode !in 200..299) {
+                return null
+            }
+
+            connection.inputStream.use { input ->
+                BitmapFactory.decodeStream(input)
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
             null
+        } finally {
+            connection?.disconnect()
         }
     }
 

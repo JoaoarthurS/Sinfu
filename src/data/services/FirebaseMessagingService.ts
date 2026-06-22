@@ -44,16 +44,15 @@ export class FirebaseMessagingService {
    */
   async getToken(): Promise<string | null> {
     try {
-      const hasPermission = await this.requestPermission();
-      
-      if (!hasPermission) {
-        console.log('Sem permissão para obter token FCM');
-        return null;
-      }
+      // Solicita a permissão (necessária para EXIBIR notificações), mas não
+      // bloqueia a obtenção do token por causa dela: no Android o token do FCM
+      // independe da permissão de exibição. Assim o dispositivo é sempre
+      // registrado no backend, mesmo que a permissão ainda não tenha sido dada.
+      await this.requestPermission();
 
       const token = await messaging().getToken();
       console.log('Token FCM obtido:', token);
-      
+
       return token;
     } catch (error) {
       console.error('Erro ao obter token FCM:', error);

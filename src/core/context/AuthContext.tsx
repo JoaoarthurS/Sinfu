@@ -70,11 +70,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Registra o token FCM no backend após login
    */
-  const registerDeviceToken = async (userId: string | number) => {
+  const registerDeviceToken = async (
+    userId: string | number,
+    explicitToken?: string,
+  ) => {
     try {
-      // Obter o token FCM
-      const fcmToken = await firebaseMessagingService.getToken();
-      
+      // Usa o token recebido (ex.: do onTokenRefresh) ou busca o atual
+      const fcmToken = explicitToken ?? (await firebaseMessagingService.getToken());
+
       if (!fcmToken) {
         console.log('Token FCM não disponível, pulando registro');
         return;
@@ -99,6 +102,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Não lançar erro para não bloquear o login
     }
   };
+
+  /**
+   * Garante que o token FCM do dispositivo esteja sempre registrado no backend
+   * enquanto houver usuário logado:
+   *  - registra o token atual assim que o usuário é definido (cobre o
+   *    auto-login por sessão salva, que antes não registrava nada);
+   *  - re-registra quando o FCM rotaciona o token (onTokenRefresh), senão o
+   *    backend continua disparando para um token antigo que vira UNREGISTERED.
+   */
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    // Registro inicial do token atual.
+    registerDeviceToken(user.id);
+
+    const unsubscribe = firebaseMessagingService.onTokenRefresh((newToken) => {
+      console.log('Token FCM renovado, re-registrando no backend');
+      registerDeviceToken(user.id, newToken);
+    });
+
+    return unsubscribe;
+  }, [user]);
 
   const signIn = async (email: string, password: string, portal?: AuthPortal) => {
     // Não usar o estado global `loading` aqui: ele desmonta todo o navigator

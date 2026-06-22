@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Platform, Linking, Alert } from 'react-native';
 import firebaseMessagingService from '../../data/services/FirebaseMessagingService';
+import localNotificationService from '../../data/services/LocalNotificationService';
 import { container } from '../di/container';
 import { STORAGE_KEYS } from '../../config/api.config';
 
@@ -90,6 +91,9 @@ export const useNotifications = () => {
     const unsubscribeForeground = firebaseMessagingService.onMessage((message) => {
       console.log('Notificação recebida em foreground:', message);
       setNotification(message);
+      // Com o app aberto o sistema não exibe a notificação automaticamente:
+      // renderizamos uma notificação local para que o usuário a veja.
+      localNotificationService.displayFromRemoteMessage(message);
     });
 
     // Listener para quando o app é aberto por uma notificação
