@@ -2,7 +2,7 @@
  * Tela de Gerenciamento de Grupos
  * Permite criar, editar, deletar e notificar grupos
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -14,9 +14,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../core/hooks/useAuth';
 import { Card } from '../components/Card';
-import { CustomButton } from '../components/CustomButton';
+import { HeaderAddButton } from '../components/HeaderAddButton';
 import { GroupModal } from '../components/GroupModal';
 import { NotifyGroupModal } from '../components/NotifyGroupModal';
 import { theme } from '../../config/theme';
@@ -26,6 +27,7 @@ import Icon from '../../core/components/Icon';
 import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 export const GroupsScreen: React.FC = () => {
+  const navigation = useNavigation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,6 +63,12 @@ export const GroupsScreen: React.FC = () => {
     setSelectedGroup(undefined);
     setGroupModalVisible(true);
   };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => <HeaderAddButton label="Novo" onPress={handleCreateGroup} />,
+    });
+  }, [navigation]);
 
   const handleEditGroup = (group: Group) => {
     setSelectedGroup(group);
@@ -192,23 +200,17 @@ export const GroupsScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Gerenciar Grupos</Text>
-        <CustomButton
-          title="+ Novo Grupo"
-          onPress={handleCreateGroup}
-          noShadow
-          style={styles.newButton}
-        />
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        <Text style={styles.subtitle}>
+          {groups.length} grupo{groups.length === 1 ? '' : 's'}
+        </Text>
         {groups.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyText}>Nenhum grupo cadastrado</Text>
@@ -253,26 +255,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.textSecondary || '#666',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border || '#e0e0e0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  newButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 16,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: theme.colors.textSecondary || '#666',
+    marginBottom: 12,
+    marginLeft: 2,
   },
   groupCard: {
     marginBottom: 16,

@@ -134,10 +134,10 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
       }
 
       await container.createNotificationUseCase.execute(notificationData);
-      
+
       Alert.alert(
         'Sucesso',
-        'Notificação criada e enviada com sucesso!',
+        'Notificação criada como rascunho. Use o botão "Enviar" na lista para dispará-la.',
         [
           {
             text: 'OK',
@@ -353,7 +353,7 @@ const CreateNotificationScreen: React.FC<CreateNotificationScreenProps> = ({ nav
             disabled={loading}
           />
           <CustomButton
-            title="Enviar Notificação"
+            title="Criar Notificação"
             variant="primary"
             onPress={handleCreate}
             loading={loading}

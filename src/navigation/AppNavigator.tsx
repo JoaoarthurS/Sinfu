@@ -21,6 +21,7 @@ import {
   UserDashboardScreen,
   AdminDashboardScreen,
   CreateNotificationScreen,
+  NotificationsManagementScreen,
   ProfileScreen,
   SavedNotificationsScreen,
   GroupsScreen,
@@ -29,6 +30,15 @@ import {
 import { theme } from '../config/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Cabeçalho padrão das telas de gerenciamento: flat e moderno, alinhado ao tema.
+const managementHeader = {
+  headerShown: true,
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: theme.colors.surface },
+  headerTitleStyle: { fontWeight: '700' as const, color: theme.colors.text },
+  headerTintColor: theme.colors.primary,
+};
 
 export const AppNavigator: React.FC = () => {
   const { user, loading, isAuthenticated, currentPortal } = useAuth();
@@ -79,19 +89,24 @@ export const AppNavigator: React.FC = () => {
               component={AdminDashboardScreen}
               initialParams={{ user: user || undefined }}
             />
-            <Stack.Screen 
-              name="Groups" 
+            <Stack.Screen
+              name="Groups"
               component={GroupsScreen}
-              options={{ headerShown: true, title: 'Grupos' }}
+              options={{ ...managementHeader, title: 'Grupos' }}
             />
             <Stack.Screen
               name="UsersManagement"
               component={UsersManagementScreen}
-              options={{ headerShown: true, title: 'Usuários' }}
+              options={{ ...managementHeader, title: 'Usuários' }}
             />
-            <Stack.Screen 
-              name="CreateNotification" 
+            <Stack.Screen
+              name="CreateNotification"
               component={CreateNotificationScreen}
+            />
+            <Stack.Screen
+              name="NotificationsManagement"
+              component={NotificationsManagementScreen}
+              options={{ ...managementHeader, title: 'Notificações' }}
             />
             <Stack.Screen 
               name="Profile" 

@@ -32,9 +32,11 @@ export class NotificationRepository implements INotificationRepository {
         return [];
       }
 
-      const notifications = response.data.data.map(notification => ({
+      const notifications = response.data.data.map((notification: any) => ({
         ...notification,
         imageUrl: fixImageUrl(notification.imageUrl),
+        usersCount: notification.users_count ?? notification.usersCount ?? 0,
+        sentAt: notification.sent_at ? new Date(notification.sent_at) : null,
         createdAt: new Date(notification.createdAt),
         updatedAt: new Date(notification.updatedAt),
       }));
@@ -76,26 +78,27 @@ export class NotificationRepository implements INotificationRepository {
 
   async create(notification: CreateNotificationDTO): Promise<Notification> {
     try {
+      // Criar é apenas RASCUNHO (status inativo). O envio é uma ação separada
+      // (ver send()), igual ao painel admin. Por isso usamos /notifications
+      // (store) em vez de /notifications/send.
       let response;
-      
+
       // Se houver uma imagem, enviar como FormData
       if (notification.image) {
         const formData = new FormData();
         formData.append('title', notification.title);
         formData.append('message', notification.message);
-        
+
         if (notification.groupIds && notification.groupIds.length > 0) {
           notification.groupIds.forEach((id, index) => {
-            formData.append(`groupIds[${index}]`, id);
+            formData.append(`group_ids[${index}]`, id);
           });
         }
-        
-        if (notification.userIds && notification.userIds.length > 0) {
-          notification.userIds.forEach((id, index) => {
-            formData.append(`userIds[${index}]`, id);
-          });
+
+        if (notification.targetUserId) {
+          formData.append('target_user_id', notification.targetUserId);
         }
-        
+
         // Sempre enviar o link (mesmo vazio) para que o backend consiga
         // detectar remoção/alteração; uma string vazia é convertida para null.
         formData.append('link', notification.link ?? '');
@@ -107,31 +110,50 @@ export class NotificationRepository implements INotificationRepository {
           name: notification.image.fileName || 'notification_image.jpg',
         };
         formData.append('image', imageFile as any);
-        
-        response = await this.apiClient.post<Notification>(
-          '/notifications/send',
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
+
+        response = await this.apiClient.post<any>('/notifications', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
       } else {
         // Enviar como JSON normal (sem imagem)
-        response = await this.apiClient.post<Notification>(
-          '/notifications/send',
-          notification
-        );
+        response = await this.apiClient.post<any>('/notifications', {
+          title: notification.title,
+          message: notification.message,
+          group_ids: notification.groupIds,
+          target_user_id: notification.targetUserId,
+          link: notification.link ?? '',
+        });
       }
 
+      // store() responde { message, data: <notificação> }
+      const created = response.data?.data ?? response.data;
+
       return {
-        ...response.data,
-        createdAt: new Date(response.data.createdAt),
-        updatedAt: new Date(response.data.updatedAt),
+        ...created,
+        createdAt: new Date(created.createdAt),
+        updatedAt: new Date(created.updatedAt),
       };
     } catch (error) {
       console.error('Create notification error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Envia (ou reenvia) uma notificação já criada. Espelha o fluxo do admin:
+   * primeiro cria o rascunho, depois envia via /notifications/{id}/send.
+   */
+  async send(id: string): Promise<{ usersCount: number; tokensCount: number }> {
+    try {
+      const response = await this.apiClient.post<any>(`/notifications/${id}/send`);
+      return {
+        usersCount: response.data?.users_count ?? 0,
+        tokensCount: response.data?.tokens_count ?? 0,
+      };
+    } catch (error) {
+      console.error('Send notification error:', error);
       throw error;
     }
   }

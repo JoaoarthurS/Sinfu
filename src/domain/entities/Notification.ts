@@ -9,6 +9,9 @@ export interface Notification {
   message: string;
   read: boolean;
   saved?: boolean; // Indica se a notificação foi salva pelo usuário
+  status?: string; // 'inactive' (rascunho) | 'sent' (enviada)
+  usersCount?: number; // quantidade de destinatários (após envio)
+  sentAt?: Date | null; // quando foi enviada (null = ainda não enviada)
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;
@@ -21,6 +24,7 @@ export interface CreateNotificationDTO {
   message: string;
   userIds?: string[];
   groupIds?: string[];
+  targetUserId?: string; // destinatário único (alvo "Por usuário")
   link?: string;
   image?: any; // Para upload de arquivo de imagem
 }

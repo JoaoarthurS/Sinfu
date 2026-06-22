@@ -19,11 +19,9 @@ import { useAuth } from '../../core/hooks/useAuth';
 import { Card } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { CustomButton } from '../components/CustomButton';
-import { NotificationModal } from '../components/NotificationModal';
 import { theme } from '../../config/theme';
 import { container } from '../../core/di/container';
-import { getSessionErrorMessage } from '../../core/utils/errorHandler';
-import { Notification, CreateNotificationDTO } from '../../domain/entities/Notification';
+import { Notification } from '../../domain/entities/Notification';
 import Icon from '../../core/components/Icon';
 
 const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation }) => {
@@ -31,8 +29,6 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | undefined>(undefined);
 
   useEffect(() => {
     loadNotifications();
@@ -87,76 +83,6 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
     ];
   };
 
-  const handleCreateNotification = () => {
-    navigation.navigate('CreateNotification');
-  };
-
-  const handleEditNotification = (notification: Notification) => {
-    setSelectedNotification(notification);
-    setModalVisible(true);
-  };
-
-  const handleDeleteNotification = (notification: Notification) => {
-    Alert.alert(
-      'Confirmar Exclusão',
-      `Deseja realmente excluir a notificação "${notification.title}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('🗑️ Deletando notificação:', notification.id);
-              await container.deleteNotificationUseCase.execute(String(notification.id));
-              console.log('✅ Notificação deletada com sucesso');
-              Alert.alert('Sucesso', 'Notificação excluída com sucesso');
-              await loadNotifications();
-            } catch (error: any) {
-              console.error('❌ Erro ao deletar notificação:', error);
-              Alert.alert('Erro', getSessionErrorMessage(error));
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSaveNotification = async (data: CreateNotificationDTO) => {
-    try {
-      if (selectedNotification) {
-        // Atualizar
-        await container.updateNotificationUseCase.execute({
-          id: selectedNotification.id,
-          ...data,
-        });
-        Alert.alert('Sucesso', 'Notificação atualizada com sucesso');
-      } else {
-        // Criar
-        await container.createNotificationUseCase.execute(data);
-        Alert.alert('Sucesso', 'Notificação criada com sucesso');
-      }
-      await loadNotifications();
-    } catch (error: any) {
-      Alert.alert('Erro', getSessionErrorMessage(error));
-    }
-  };
-
-  const getTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'Agora';
-    if (minutes < 60) return `${minutes}min atrás`;
-    
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h atrás`;
-    
-    const days = Math.floor(hours / 24);
-    return `${days}d atrás`;
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
@@ -200,20 +126,20 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
           </View>
         </Card>
 
-        {/* Botão Criar Notificação */}
+        {/* Gerenciamento de Notificações */}
         <Card>
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
               <Icon family="FontAwesome" name="bullhorn" size={20} color={theme.colors.primary} style={styles.cardTitleIcon} />
-              <Text style={styles.cardTitle}>Criar Notificação</Text>
+              <Text style={styles.cardTitle}>Notificações</Text>
             </View>
           </View>
           <Text style={styles.groupDescription}>
-            Envie notificações push personalizadas para usuários e grupos específicos
+            Crie notificações para todos, por grupo ou por usuário, e gerencie envios, edições e exclusões
           </Text>
           <CustomButton
-            title="Criar Nova Notificação"
-            onPress={() => navigation.navigate('CreateNotification')}
+            title="Gerenciar Notificações"
+            onPress={() => navigation.navigate('NotificationsManagement')}
             style={styles.groupsButton}
           />
         </Card>
@@ -223,7 +149,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
               <Icon family="FontAwesome" name="users" size={20} color={theme.colors.primary} style={styles.cardTitleIcon} />
-              <Text style={styles.cardTitle}>Gerenciamento de Grupos</Text>
+              <Text style={styles.cardTitle}>Grupos</Text>
             </View>
           </View>
           <Text style={styles.groupDescription}>
@@ -241,7 +167,7 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
               <Icon family="FontAwesome" name="user-circle" size={20} color={theme.colors.primary} style={styles.cardTitleIcon} />
-              <Text style={styles.cardTitle}>Gerenciamento de Usuários</Text>
+              <Text style={styles.cardTitle}>Usuários</Text>
             </View>
           </View>
           <Text style={styles.groupDescription}>
@@ -254,81 +180,8 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
           />
         </Card>
 
-        {/* Gerenciar Notificações */}
-        <Card>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>
-              Gerenciar Notificações
-            </Text>
-            <TouchableOpacity 
-              style={styles.createButton}
-              onPress={handleCreateNotification}
-            >
-              <Text style={styles.createButtonText}>+ Nova</Text>
-            </TouchableOpacity>
-          </View>
-
-          {loading ? (
-            <Text style={styles.loadingText}>Carregando...</Text>
-          ) : notifications.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma notificação encontrada</Text>
-          ) : (
-            notifications.map((notification) => (
-              <View
-                key={notification.id}
-                style={[
-                  styles.notificationItem,
-                  !notification.read && styles.notificationUnread,
-                ]}
-              >
-                <View style={styles.notificationContent}>
-                  <View style={styles.notificationHeader}>
-                    <Text style={styles.notificationTitle}>
-                      {notification.title}
-                    </Text>
-                  </View>
-                  <Text style={styles.notificationMessage}>
-                    {notification.message}
-                  </Text>
-                  <View style={styles.notificationTimeContainer}>
-                    <Text style={styles.notificationTime}>
-                      {getTimeAgo(notification.createdAt)}
-                    </Text>
-                  </View>
-
-                  {/* Botões de Ação */}
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.editButton]}
-                      onPress={() => handleEditNotification(notification)}
-                    >
-                      <Text style={styles.editButtonText}>Editar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.deleteButton]}
-                      onPress={() => handleDeleteNotification(notification)}
-                    >
-                      <Text style={styles.deleteButtonText}>Excluir</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                {!notification.read && <View style={styles.unreadDot} />}
-              </View>
-            ))
-          )}
-        </Card>
         <View style={{ height: 50 }} />
-
-       
       </ScrollView>
-
-      {/* Modal de Criar/Editar Notificação */}
-      <NotificationModal
-        visible={modalVisible}
-        notification={selectedNotification}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSaveNotification}
-      />
     </SafeAreaView>
   );
 };
@@ -570,6 +423,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
     alignItems: 'center',
+  },
+  sendButton: {
+    backgroundColor: theme.colors.primary,
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+  sendButtonText: {
+    ...theme.typography.bodySmall,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  statusBadgeRow: {
+    flexDirection: 'row',
+    marginTop: theme.spacing.xs,
+  },
+  statusBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+  },
+  statusBadgeSent: {
+    backgroundColor: theme.colors.success + '20',
+  },
+  statusBadgeDraft: {
+    backgroundColor: theme.colors.textSecondary + '20',
+  },
+  statusBadgeText: {
+    ...theme.typography.caption,
+    fontWeight: '600',
+    color: theme.colors.text,
   },
   editButton: {
     backgroundColor: theme.colors.info + '20',

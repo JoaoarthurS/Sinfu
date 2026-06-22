@@ -15,6 +15,7 @@ import { LoginUseCase } from '../../domain/useCases/LoginUseCase';
 import { LogoutUseCase } from '../../domain/useCases/LogoutUseCase';
 import { GetAllNotificationsUseCase } from '../../domain/useCases/GetAllNotificationsUseCase';
 import { CreateNotificationUseCase } from '../../domain/useCases/CreateNotificationUseCase';
+import { SendNotificationUseCase } from '../../domain/useCases/SendNotificationUseCase';
 import { UpdateNotificationUseCase } from '../../domain/useCases/UpdateNotificationUseCase';
 import { DeleteNotificationUseCase } from '../../domain/useCases/DeleteNotificationUseCase';
 import { GetAllGroupsUseCase } from '../../domain/useCases/GetAllGroupsUseCase';
@@ -46,6 +47,7 @@ class DIContainer {
   private _logoutUseCase?: LogoutUseCase;
   private _getAllNotificationsUseCase?: GetAllNotificationsUseCase;
   private _createNotificationUseCase?: CreateNotificationUseCase;
+  private _sendNotificationUseCase?: SendNotificationUseCase;
   private _updateNotificationUseCase?: UpdateNotificationUseCase;
   private _deleteNotificationUseCase?: DeleteNotificationUseCase;
   private _getAllGroupsUseCase?: GetAllGroupsUseCase;
@@ -149,6 +151,15 @@ class DIContainer {
       );
     }
     return this._createNotificationUseCase;
+  }
+
+  get sendNotificationUseCase(): SendNotificationUseCase {
+    if (!this._sendNotificationUseCase) {
+      this._sendNotificationUseCase = new SendNotificationUseCase(
+        this.notificationRepository
+      );
+    }
+    return this._sendNotificationUseCase;
   }
 
   get updateNotificationUseCase(): UpdateNotificationUseCase {
@@ -271,6 +282,7 @@ class DIContainer {
     this._logoutUseCase = undefined;
     this._getAllNotificationsUseCase = undefined;
     this._createNotificationUseCase = undefined;
+    this._sendNotificationUseCase = undefined;
     this._updateNotificationUseCase = undefined;
     this._deleteNotificationUseCase = undefined;
     this._getAllGroupsUseCase = undefined;

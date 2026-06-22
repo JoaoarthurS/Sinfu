@@ -1,7 +1,7 @@
 /**
  * Tela de gerenciamento de usuarios (admin)
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Card } from '../components/Card';
-import { CustomButton } from '../components/CustomButton';
+import { HeaderAddButton } from '../components/HeaderAddButton';
 import { ManagedUser, UserModal, UserModalPayload } from '../components/UserModal';
 import { container } from '../../core/di/container';
 import { theme } from '../../config/theme';
@@ -37,6 +38,7 @@ const mapApiUser = (apiUser: any): ManagedUser => ({
 });
 
 const UsersManagementScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -84,6 +86,12 @@ const UsersManagementScreen: React.FC = () => {
     setSelectedUser(undefined);
     setModalVisible(true);
   };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => <HeaderAddButton label="Novo" onPress={handleCreate} />,
+    });
+  }, [navigation]);
 
   const handleEdit = (user: ManagedUser) => {
     setSelectedUser(user);
@@ -145,16 +153,15 @@ const UsersManagementScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Gerenciar Usuarios</Text>
-        <CustomButton title="+ Novo" onPress={handleCreate} style={styles.newButton} />
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        <Text style={styles.subtitle}>
+          {total} usuário{total === 1 ? '' : 's'}
+        </Text>
         {users.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Nenhum usuario encontrado</Text>
@@ -238,28 +245,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: theme.colors.textSecondary || '#666',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border || '#e0e0e0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  newButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 16,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: theme.colors.textSecondary || '#666',
+    marginBottom: 12,
+    marginLeft: 2,
   },
   userCard: {
     marginBottom: 12,

@@ -8,6 +8,7 @@ export interface INotificationRepository {
   getAll(): Promise<Notification[]>;
   getById(id: string): Promise<Notification | null>;
   create(notification: CreateNotificationDTO): Promise<Notification>;
+  send(id: string): Promise<{ usersCount: number; tokensCount: number }>;
   update(notification: UpdateNotificationDTO): Promise<Notification>;
   delete(id: string): Promise<void>;
   markAsRead(id: string): Promise<void>;

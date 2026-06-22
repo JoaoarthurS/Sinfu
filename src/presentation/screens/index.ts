@@ -7,6 +7,7 @@ export { default as LoginScreen } from './LoginScreen';
 export { default as UserDashboardScreen } from './UserDashboardScreen';
 export { default as AdminDashboardScreen } from './AdminDashboardScreen';
 export { default as CreateNotificationScreen } from './CreateNotificationScreen';
+export { default as NotificationsManagementScreen } from './NotificationsManagementScreen';
 export { default as ProfileScreen } from './ProfileScreen';
 export { default as SavedNotificationsScreen } from './SavedNotificationsScreen';
 export { GroupsScreen } from './GroupsScreen';
