@@ -26,6 +26,10 @@ import { container } from '../../core/di/container';
 import { Group } from '../../domain/entities/Group';
 import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
+// O grupo "externo" é obrigatório e não editável pelo usuário.
+const isExternalGroup = (group: { name?: string }): boolean =>
+  (group.name ?? '').trim().toLowerCase() === 'externo';
+
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, updateUser, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -44,6 +48,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   );
   const [publicGroups, setPublicGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
+
+  // Carrega o perfil atualizado (incluindo grupos) ao abrir a tela, já que a
+  // resposta do login não traz os grupos do usuário.
+  useEffect(() => {
+    container.getProfileUseCase
+      .execute()
+      .then((fresh) => {
+        updateUser?.(fresh);
+        setSelectedGroupIds(fresh.groups?.map((g) => g.id) || []);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Carrega grupos públicos ao entrar no modo de edição
   useEffect(() => {
@@ -111,11 +128,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
       setLoading(true);
 
+      // O grupo "externo" é obrigatório: garante que ele sempre seja enviado,
+      // mesmo que não esteja em selectedGroupIds.
+      const externalGroup = publicGroups.find(isExternalGroup);
+      const groupIds = externalGroup
+        ? Array.from(new Set([...selectedGroupIds, externalGroup.id]))
+        : selectedGroupIds;
+
       // Preparar dados para envio
       const updateData: any = {
         name,
         email,
-        group_ids: selectedGroupIds,
+        group_ids: groupIds,
       };
 
       if (password) {
@@ -336,11 +360,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               <Text style={styles.label}>Grupos</Text>
               {user?.groups && user.groups.length > 0 ? (
                 <View style={styles.chipsContainer}>
-                  {user.groups.map(g => (
-                    <View key={g.id} style={styles.chip}>
-                      <Text style={styles.chipText}>{g.name}</Text>
-                    </View>
-                  ))}
+                  {user.groups.map(g => {
+                    const fixed = isExternalGroup(g);
+                    return (
+                      <View key={g.id} style={[styles.chip, fixed && styles.chipFixed]}>
+                        {fixed && (
+                          <Icon
+                            family="Ionicons"
+                            name="lock-closed"
+                            size={13}
+                            color={theme.colors.textSecondary}
+                            style={{ marginRight: 4 }}
+                          />
+                        )}
+                        <Text style={[styles.chipText, fixed && styles.chipTextFixed]}>{g.name}</Text>
+                      </View>
+                    );
+                  })}
                 </View>
               ) : (
                 <Text style={styles.emptyText}>Nenhum grupo</Text>
@@ -366,32 +402,49 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             ) : publicGroups.length === 0 ? (
               <Text style={styles.emptyText}>Nenhum grupo público disponível</Text>
             ) : (
+              <>
               <View style={styles.chipsContainer}>
                 {publicGroups.map(group => {
-                  const selected = selectedGroupIds.includes(group.id);
+                  const fixed = isExternalGroup(group);
+                  const selected = fixed || selectedGroupIds.includes(group.id);
                   return (
                     <TouchableOpacity
                       key={group.id}
-                      style={[styles.chip, selected && styles.chipSelected]}
-                      onPress={() => toggleGroup(group.id)}
-                      activeOpacity={0.7}
+                      style={[
+                        styles.chip,
+                        selected && styles.chipSelected,
+                        fixed && styles.chipFixed,
+                      ]}
+                      onPress={() => !fixed && toggleGroup(group.id)}
+                      disabled={fixed}
+                      activeOpacity={fixed ? 1 : 0.7}
                     >
-                      {selected && (
+                      {(fixed || selected) && (
                         <Icon
                           family="Ionicons"
-                          name="checkmark"
+                          name={fixed ? 'lock-closed' : 'checkmark'}
                           size={14}
-                          color={theme.colors.surface}
+                          color={fixed ? theme.colors.textSecondary : theme.colors.surface}
                           style={{ marginRight: 4 }}
                         />
                       )}
-                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          selected && styles.chipTextSelected,
+                          fixed && styles.chipTextFixed,
+                        ]}
+                      >
                         {group.name}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
+              <Text style={styles.fixedGroupHint}>
+                O grupo "externo" é obrigatório e não pode ser removido.
+              </Text>
+              </>
             )}
           </Card>
         )}
@@ -536,6 +589,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
+  chipFixed: {
+    backgroundColor: theme.colors.border,
+    borderColor: theme.colors.border,
+  },
   chipText: {
     ...theme.typography.bodySmall,
     color: theme.colors.text,
@@ -543,6 +600,16 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: theme.colors.surface,
+  },
+  chipTextFixed: {
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  fixedGroupHint: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: theme.spacing.sm,
   },
   actions: {
     flexDirection: 'row',
