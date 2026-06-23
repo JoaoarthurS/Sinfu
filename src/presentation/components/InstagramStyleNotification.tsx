@@ -92,19 +92,19 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
 
       {/* Footer Actions */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleSaveToggle} activeOpacity={0.6}>
           <Icon
             family="Ionicons"
             name={isSaved ? "bookmark" : "bookmark-outline"}
-            size={18}
-            color={isSaved ? theme.colors.primary : theme.colors.textSecondary}
+            size={20}
+            color={isSaved ? theme.colors.primary : theme.colors.text}
           />
           <Text style={[styles.actionButtonText, isSaved && styles.actionButtonTextActive]}>
             {isSaved ? 'Salvo' : 'Salvar'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <Icon family="Ionicons" name="share-social-outline" size={18} color={theme.colors.textSecondary} />
+        <TouchableOpacity style={[styles.actionButton, styles.actionButtonRight]} onPress={handleShare} activeOpacity={0.6}>
+          <Icon family="Ionicons" name="share-social-outline" size={20} color={theme.colors.text} />
           <Text style={styles.actionButtonText}>Compartilhar</Text>
         </TouchableOpacity>
       </View>
@@ -164,24 +164,30 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    marginTop: theme.spacing.sm,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.md,
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
     borderTopWidth: 1,
     borderTopColor: theme.colors.divider,
   },
   actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: 14,
+  },
+  actionButtonRight: {
+    borderLeftWidth: 1,
+    borderLeftColor: theme.colors.divider,
   },
   actionButtonText: {
     ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
+    fontWeight: '600',
+    color: theme.colors.text,
   },
   actionButtonTextActive: {
     color: theme.colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
