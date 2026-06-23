@@ -8,6 +8,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -25,17 +26,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(remoteMessage: RemoteMessage) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        // Se a notificação tiver um link, o toque abre o link diretamente;
+        // caso contrário, abre o app.
+        val link = remoteMessage.data["link"]
+        val intent = if (!link.isNullOrEmpty()) {
+            Intent(Intent.ACTION_VIEW, Uri.parse(link)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         } else {
-            PendingIntent.FLAG_ONE_SHOT
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
         }
-        
+
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+
+        // Request code único por notificação para não reutilizar PendingIntents
+        // de links diferentes.
+        val requestCode = System.currentTimeMillis().toInt()
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent, pendingIntentFlags
+            this, requestCode, intent, pendingIntentFlags
         )
 
         val channelId = "default_notification_channel"
