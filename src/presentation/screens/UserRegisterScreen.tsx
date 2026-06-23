@@ -26,6 +26,10 @@ import { container } from '../../core/di/container';
 import { getErrorMessage } from '../../core/utils/errorHandler';
 import { Group } from '../../domain/entities/Group';
 
+// O grupo "externo" é o padrão de todo usuário criado e não pode ser removido.
+const isExternalGroup = (group: { name?: string }): boolean =>
+  (group.name ?? '').trim().toLowerCase() === 'externo';
+
 const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) => {
   const { signUp } = useAuth();
 
@@ -54,6 +58,14 @@ const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) =
       setLoadingGroups(true);
       const groups = await container.groupRepository.getPublicGroups();
       setPublicGroups(groups);
+
+      // O grupo "externo" vem selecionado por padrão e não pode ser removido.
+      const external = groups.find(isExternalGroup);
+      if (external) {
+        setSelectedGroupIds((prev) =>
+          prev.includes(external.id) ? prev : [...prev, external.id],
+        );
+      }
     } catch {
       // Silencioso: grupos são opcionais no cadastro
     } finally {
@@ -222,29 +234,54 @@ const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) =
                   ) : (
                     <View style={styles.groupsList}>
                       {publicGroups.map((group) => {
-                        const selected = selectedGroupIds.includes(group.id);
+                        const fixed = isExternalGroup(group);
+                        const selected = fixed || selectedGroupIds.includes(group.id);
                         return (
                           <TouchableOpacity
                             key={group.id}
-                            style={[styles.groupChip, selected && styles.groupChipSelected]}
-                            onPress={() => toggleGroup(group.id)}
-                            activeOpacity={0.7}
+                            style={[
+                              styles.groupChip,
+                              selected && styles.groupChipSelected,
+                              fixed && styles.groupChipFixed,
+                            ]}
+                            onPress={() => !fixed && toggleGroup(group.id)}
+                            disabled={fixed}
+                            activeOpacity={fixed ? 1 : 0.7}
                           >
                             <Icon
                               family="FontAwesome"
-                              name={selected ? 'check-circle' : 'circle-o'}
+                              name={fixed ? 'lock' : selected ? 'check-circle' : 'circle-o'}
                               size={16}
-                              color={selected ? '#fff' : theme.colors.primary}
+                              color={fixed ? theme.colors.textSecondary : selected ? '#fff' : theme.colors.primary}
                             />
                             <View style={styles.groupChipText}>
-                              <Text style={[styles.groupChipName, selected && styles.groupChipNameSelected]}>
-                                {group.name}
-                              </Text>
-                              {group.description ? (
-                                <Text style={[styles.groupChipDesc, selected && styles.groupChipDescSelected]}>
-                                  {group.description}
+                              <View style={styles.groupChipNameRow}>
+                                <Text
+                                  style={[
+                                    styles.groupChipName,
+                                    selected && styles.groupChipNameSelected,
+                                    fixed && styles.groupChipNameFixed,
+                                  ]}
+                                >
+                                  {group.name}
                                 </Text>
-                              ) : null}
+                                {fixed && (
+                                  <View style={styles.defaultBadge}>
+                                    <Text style={styles.defaultBadgeText}>Padrão</Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Text
+                                style={[
+                                  styles.groupChipDesc,
+                                  selected && styles.groupChipDescSelected,
+                                  fixed && styles.groupChipDescFixed,
+                                ]}
+                              >
+                                {fixed
+                                  ? 'Tipo padrão de todos os usuários. Não pode ser removido.'
+                                  : group.description || ''}
+                              </Text>
                             </View>
                           </TouchableOpacity>
                         );
@@ -377,8 +414,17 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
+  groupChipFixed: {
+    backgroundColor: theme.colors.border,
+    borderColor: theme.colors.border,
+  },
   groupChipText: {
     flex: 1,
+  },
+  groupChipNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   groupChipName: {
     fontSize: 14,
@@ -388,6 +434,20 @@ const styles = StyleSheet.create({
   groupChipNameSelected: {
     color: '#fff',
   },
+  groupChipNameFixed: {
+    color: theme.colors.text,
+  },
+  defaultBadge: {
+    backgroundColor: theme.colors.textSecondary || '#666',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  defaultBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+  },
   groupChipDesc: {
     fontSize: 12,
     color: theme.colors.textSecondary || '#666',
@@ -395,6 +455,9 @@ const styles = StyleSheet.create({
   },
   groupChipDescSelected: {
     color: 'rgba(255,255,255,0.85)',
+  },
+  groupChipDescFixed: {
+    color: theme.colors.textSecondary || '#666',
   },
 });
 
