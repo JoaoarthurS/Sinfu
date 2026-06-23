@@ -3,6 +3,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -14,12 +15,15 @@ import {
 } from 'react-native';
 import { theme } from '../../config/theme';
 import { CustomButton } from './CustomButton';
+import { container } from '../../core/di/container';
+import Icon from '../../core/components/Icon';
 
 export interface ManagedUser {
   id: string;
   name: string;
   email: string;
   groupsCount?: number;
+  groupIds?: string[];
   createdAt?: Date;
 }
 
@@ -28,6 +32,12 @@ export interface UserModalPayload {
   email: string;
   password?: string;
   password_confirmation?: string;
+  group_ids: string[];
+}
+
+interface GroupOption {
+  id: string;
+  name: string;
 }
 
 interface UserModalProps {
@@ -50,6 +60,9 @@ export const UserModal: React.FC<UserModalProps> = ({
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [groups, setGroups] = useState<GroupOption[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (isEdit && user) {
@@ -57,6 +70,7 @@ export const UserModal: React.FC<UserModalProps> = ({
       setEmail(user.email);
       setPassword('');
       setPasswordConfirmation('');
+      setSelectedGroupIds(user.groupIds ?? []);
       return;
     }
 
@@ -64,7 +78,44 @@ export const UserModal: React.FC<UserModalProps> = ({
     setEmail('');
     setPassword('');
     setPasswordConfirmation('');
+    setSelectedGroupIds([]);
   }, [isEdit, user, visible]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        setLoadingGroups(true);
+        const data = await container.getAllGroupsUseCase.execute();
+        if (active) {
+          setGroups(data.map((g) => ({ id: String(g.id), name: g.name })));
+        }
+      } catch (error) {
+        console.error('Error loading groups:', error);
+        if (active) {
+          setGroups([]);
+        }
+      } finally {
+        if (active) {
+          setLoadingGroups(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [visible]);
+
+  const toggleGroup = (id: string) => {
+    setSelectedGroupIds((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+    );
+  };
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -96,6 +147,7 @@ export const UserModal: React.FC<UserModalProps> = ({
       await onSubmit({
         name: name.trim(),
         email: email.trim(),
+        group_ids: selectedGroupIds,
         ...(isEdit
           ? {}
           : {
@@ -159,6 +211,43 @@ export const UserModal: React.FC<UserModalProps> = ({
                 />
               </>
             )}
+
+            <Text style={styles.label}>Grupos</Text>
+            {loadingGroups ? (
+              <View style={styles.groupsLoading}>
+                <ActivityIndicator color={theme.colors.primary} />
+                <Text style={styles.groupsLoadingText}>Carregando grupos...</Text>
+              </View>
+            ) : groups.length === 0 ? (
+              <Text style={styles.groupsEmpty}>Nenhum grupo cadastrado</Text>
+            ) : (
+              <View style={styles.groupsList}>
+                {groups.map((g) => {
+                  const checked = selectedGroupIds.includes(g.id);
+                  return (
+                    <TouchableOpacity
+                      key={g.id}
+                      style={styles.groupRow}
+                      onPress={() => toggleGroup(g.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.groupName}>{g.name}</Text>
+                      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                        {checked && (
+                          <Icon family="FontAwesome" name="check" size={11} color="#fff" />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+            {!loadingGroups && groups.length > 0 && (
+              <Text style={styles.groupsCount}>
+                {selectedGroupIds.length} grupo{selectedGroupIds.length === 1 ? '' : 's'} selecionado
+                {selectedGroupIds.length === 1 ? '' : 's'}
+              </Text>
+            )}
           </ScrollView>
 
           <View style={styles.actions}>
@@ -166,12 +255,14 @@ export const UserModal: React.FC<UserModalProps> = ({
               title="Cancelar"
               onPress={onClose}
               variant="secondary"
+              noShadow
               style={styles.actionButton}
               disabled={loading}
             />
             <CustomButton
               title={isEdit ? 'Salvar' : 'Criar'}
               onPress={handleSubmit}
+              noShadow
               style={styles.actionButton}
               loading={loading}
             />
@@ -217,6 +308,60 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     borderWidth: 1,
     borderColor: theme.colors.border || '#e0e0e0',
+  },
+  groupsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+  },
+  groupsLoadingText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary || '#666',
+  },
+  groupsEmpty: {
+    fontSize: 14,
+    color: theme.colors.textSecondary || '#666',
+    paddingVertical: 8,
+  },
+  groupsList: {
+    borderWidth: 1,
+    borderColor: theme.colors.border || '#e0e0e0',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  groupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border || '#e0e0e0',
+  },
+  groupName: {
+    flex: 1,
+    fontSize: 15,
+    color: theme.colors.text,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border || '#cbd5e1',
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  groupsCount: {
+    fontSize: 12,
+    color: theme.colors.textSecondary || '#666',
+    marginTop: 6,
   },
   actions: {
     flexDirection: 'row',
