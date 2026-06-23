@@ -11,7 +11,11 @@
 import { Share as RNShare } from 'react-native';
 import { Notification } from '../../domain/entities/Notification';
 
-/** Monta o texto do compartilhamento: título, mensagem, link de destino e data/hora. */
+/**
+ * Monta o texto do compartilhamento com cada campo rotulado (título, descrição,
+ * link de destino e data/hora). Os rótulos usam *negrito* (renderizado no
+ * WhatsApp) e nunca incluímos o link técnico da imagem da API.
+ */
 function buildShareMessage(notification: Notification): string {
   const dateTime = new Date(notification.createdAt).toLocaleString('pt-BR', {
     day: '2-digit',
@@ -21,15 +25,20 @@ function buildShareMessage(notification: Notification): string {
     minute: '2-digit',
   });
 
-  let content = `${notification.title}\n\n${notification.message}`;
+  const lines: string[] = [
+    `*Título:* ${notification.title}`,
+    '',
+    `*Descrição:* ${notification.message}`,
+  ];
 
   // Mantemos apenas o link de destino real (se houver), nunca o link da imagem.
-  if (notification.link) {
-    content += `\n\n${notification.link}`;
+  if (notification.link && notification.link.trim().length > 0) {
+    lines.push('', `*Link:* ${notification.link.trim()}`);
   }
 
-  content += `\n\n${dateTime}`;
-  return content;
+  lines.push('', `*Data e hora:* ${dateTime}`);
+
+  return lines.join('\n');
 }
 
 /**
@@ -38,7 +47,14 @@ function buildShareMessage(notification: Notification): string {
  * dados inválidos, fazendo a imagem não ser anexada).
  */
 async function fetchImageAsDataUrl(url: string): Promise<string> {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      // Evita que proxies como o ngrok devolvam a pagina HTML de aviso no lugar
+      // da imagem (o que faria o anexo sair como link/HTML em vez da imagem).
+      Accept: 'image/*',
+      'ngrok-skip-browser-warning': 'true',
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`Falha ao baixar imagem (HTTP ${response.status})`);
