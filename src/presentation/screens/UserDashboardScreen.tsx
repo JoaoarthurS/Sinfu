@@ -2,7 +2,7 @@
  * Dashboard do Usuário Comum
  * Exibe notificações básicas e informações do perfil
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -14,7 +14,9 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
+  AppState,
 } from 'react-native';
+import firebaseMessagingService from '../../data/services/FirebaseMessagingService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserDashboardScreenProps } from '../../navigation/types';
 import { useAuth } from '../../core/hooks/useAuth';
@@ -39,6 +41,27 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
       loadNotifications();
     }, [])
   );
+
+  // Atualiza o feed quando chega uma notificacao em foreground ou quando o app
+  // volta do background (ex.: ao tocar na notificacao). O useFocusEffect acima
+  // nao dispara nesses casos porque a tela ja esta montada e focada.
+  useEffect(() => {
+    const unsubscribeMessage = firebaseMessagingService.onMessage(() => {
+      loadNotifications();
+    });
+
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        loadNotifications();
+      }
+    });
+
+    return () => {
+      unsubscribeMessage();
+      appStateSub.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadNotifications = async () => {
     try {
