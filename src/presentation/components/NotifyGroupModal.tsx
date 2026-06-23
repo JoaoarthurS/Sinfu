@@ -16,6 +16,7 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 import { theme } from '../../config/theme';
 import { CustomButton } from './CustomButton';
+import Icon from '../../core/components/Icon';
 import { Group } from '../../domain/entities/Group';
 
 interface NotifyGroupModalProps {
@@ -133,20 +134,30 @@ export const NotifyGroupModal: React.FC<NotifyGroupModalProps> = ({
             />
             <Text style={styles.charCount}>{body.length}/500</Text>
 
-            <Text style={styles.label}>Link</Text>
+            <View style={styles.labelRow}>
+              <Text style={[styles.label, styles.labelInRow]}>Link (opcional)</Text>
+              {link.length > 0 && (
+                <TouchableOpacity onPress={() => setLink('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.clearLink}>Remover link</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <TextInput
               style={styles.input}
               value={link}
               onChangeText={setLink}
               placeholder="https://example.com"
+              placeholderTextColor={theme.colors.textSecondary}
               keyboardType="url"
               autoCapitalize="none"
+              clearButtonMode="while-editing"
             />
 
             <Text style={styles.label}>Imagem (opcional)</Text>
             {!selectedImage ? (
               <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
-                <Text style={styles.imageButtonText}>Selecionar Imagem</Text>
+                <Icon family="FontAwesome" name="image" size={16} color="#fff" />
+                <Text style={styles.imageButtonText}>Selecionar imagem</Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.imagePreviewContainer}>
@@ -215,6 +226,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 12,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  labelInRow: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  clearLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.danger || '#dc2626',
+  },
   input: {
     backgroundColor: theme.colors.card,
     borderRadius: 8,
@@ -238,7 +265,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderRadius: 8,
     paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   imageButtonText: {
     fontSize: 14,

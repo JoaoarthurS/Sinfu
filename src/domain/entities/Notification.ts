@@ -25,14 +25,16 @@ export interface CreateNotificationDTO {
   userIds?: string[];
   groupIds?: string[];
   targetUserId?: string; // destinatário único (alvo "Por usuário")
-  link?: string;
+  link?: string; // string vazia = remover o link
   image?: any; // Para upload de arquivo de imagem
+  removeImage?: boolean; // remove a imagem já vinculada (edição)
 }
 
 export interface UpdateNotificationDTO {
   id: string;
   title?: string;
   message?: string;
-  link?: string;
+  link?: string; // string vazia = remover o link
   image?: any; // Para upload de arquivo de imagem
+  removeImage?: boolean; // remove a imagem já vinculada
 }

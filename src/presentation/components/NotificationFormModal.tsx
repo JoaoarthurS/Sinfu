@@ -62,6 +62,7 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
   const [message, setMessage] = useState('');
   const [link, setLink] = useState('');
   const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const [target, setTarget] = useState<NotificationTarget>('all');
   const [groupId, setGroupId] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
@@ -74,6 +75,7 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
       setMessage(notification?.message ?? '');
       setLink(notification?.link ?? '');
       setSelectedImage(null);
+      setRemoveImage(false);
       setTarget('all');
       setGroupId('');
       setUserId('');
@@ -114,9 +116,15 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
     const data: CreateNotificationDTO = {
       title: title.trim(),
       message: message.trim(),
+      // Sempre envia o link: string vazia remove o link existente.
+      link: link.trim(),
     };
-    if (link.trim()) data.link = link.trim();
-    if (selectedImage) data.image = selectedImage;
+    if (selectedImage) {
+      data.image = selectedImage;
+    } else if (removeImage) {
+      // Edição: remover a imagem já vinculada (sem enviar uma nova).
+      data.removeImage = true;
+    }
 
     if (!isEditing) {
       if (target === 'group') data.groupIds = [groupId];
@@ -266,7 +274,14 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Link (opcional)</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Link (opcional)</Text>
+                {link.length > 0 && (
+                  <TouchableOpacity onPress={() => setLink('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={styles.clearLink}>Remover link</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <TextInput
                 style={styles.input}
                 value={link}
@@ -275,26 +290,40 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
                 placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="url"
                 autoCapitalize="none"
+                clearButtonMode="while-editing"
               />
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Imagem (opcional)</Text>
-              {!selectedImage ? (
-                <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
-                  <Icon family="FontAwesome" name="image" size={16} color="#fff" />
-                  <Text style={styles.imageButtonText}>Selecionar imagem</Text>
-                </TouchableOpacity>
-              ) : (
+              {selectedImage ? (
+                // Nova imagem selecionada
                 <View style={styles.imagePreviewContainer}>
                   <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} resizeMode="cover" />
                   <TouchableOpacity style={styles.removeImageButton} onPress={() => setSelectedImage(null)}>
                     <Text style={styles.removeImageText}>✕ Remover</Text>
                   </TouchableOpacity>
                 </View>
+              ) : isEditing && notification?.imageUrl && !removeImage ? (
+                // Imagem já vinculada à notificação (pode ser removida)
+                <View style={styles.imagePreviewContainer}>
+                  <Image source={{ uri: notification.imageUrl }} style={styles.imagePreview} resizeMode="cover" />
+                  <TouchableOpacity style={styles.removeImageButton} onPress={() => setRemoveImage(true)}>
+                    <Text style={styles.removeImageText}>✕ Remover imagem</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
+                  <Icon family="FontAwesome" name="image" size={16} color="#fff" />
+                  <Text style={styles.imageButtonText}>
+                    {isEditing && notification?.imageUrl && removeImage
+                      ? 'Selecionar nova imagem'
+                      : 'Selecionar imagem'}
+                  </Text>
+                </TouchableOpacity>
               )}
-              {isEditing && notification?.imageUrl && !selectedImage && (
-                <Text style={styles.helperText}>A notificação já possui uma imagem.</Text>
+              {isEditing && removeImage && !selectedImage && (
+                <Text style={styles.helperText}>A imagem será removida ao salvar.</Text>
               )}
             </View>
           </ScrollView>
@@ -363,6 +392,17 @@ const styles = StyleSheet.create({
     ...theme.typography.body,
     fontWeight: '600',
     color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  clearLink: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.danger,
+    fontWeight: '600',
     marginBottom: theme.spacing.xs,
   },
   segment: {

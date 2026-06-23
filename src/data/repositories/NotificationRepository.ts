@@ -174,7 +174,7 @@ export class NotificationRepository implements INotificationRepository {
         }
         // Sempre enviar o link (mesmo vazio) para que o backend consiga
         // detectar remoção/alteração; uma string vazia é convertida para null.
-        formData.append('link', (notification as any).link ?? '');
+        formData.append('link', notification.link ?? '');
 
         // Adicionar imagem ao FormData
         const imageFile = {
@@ -183,7 +183,7 @@ export class NotificationRepository implements INotificationRepository {
           name: (notification as any).image.fileName || 'notification_image.jpg',
         };
         formData.append('image', imageFile as any);
-        
+
         response = await this.apiClient.post<Notification>(
           `/notifications/${notification.id}?_method=PUT`,
           formData,
@@ -194,10 +194,16 @@ export class NotificationRepository implements INotificationRepository {
           }
         );
       } else {
-        // Enviar como JSON normal (sem imagem)
+        // Sem nova imagem: envia JSON. Sempre manda 'link' (vazio = remover) e
+        // 'remove_image' para permitir remover a imagem já vinculada.
         response = await this.apiClient.put<Notification>(
           `/notifications/${notification.id}`,
-          notification
+          {
+            title: notification.title,
+            message: notification.message,
+            link: notification.link ?? '',
+            remove_image: notification.removeImage ? 1 : 0,
+          }
         );
       }
 
