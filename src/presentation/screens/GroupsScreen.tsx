@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../core/hooks/useAuth';
 import { Card } from '../components/Card';
 import { HeaderAddButton } from '../components/HeaderAddButton';
+import { SearchBar } from '../components/SearchBar';
 import { GroupModal } from '../components/GroupModal';
 import { NotifyGroupModal } from '../components/NotifyGroupModal';
 import { theme } from '../../config/theme';
@@ -32,6 +33,7 @@ export const GroupsScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [search, setSearch] = useState('');
   const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [notifyModalVisible, setNotifyModalVisible] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | undefined>(undefined);
@@ -188,6 +190,15 @@ export const GroupsScreen: React.FC = () => {
     </Card>
   );
 
+  const filteredGroups = groups.filter((g) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      g.name.toLowerCase().includes(q) ||
+      (g.description ?? '').toLowerCase().includes(q)
+    );
+  });
+
   if (loading && groups.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
@@ -204,12 +215,18 @@ export const GroupsScreen: React.FC = () => {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Pesquisar grupos..."
+        />
         <Text style={styles.subtitle}>
-          {groups.length} grupo{groups.length === 1 ? '' : 's'}
+          {filteredGroups.length} grupo{filteredGroups.length === 1 ? '' : 's'}
         </Text>
         {groups.length === 0 ? (
           <Card style={styles.emptyCard}>
@@ -218,8 +235,13 @@ export const GroupsScreen: React.FC = () => {
               Crie um grupo para começar a organizar usuários
             </Text>
           </Card>
+        ) : filteredGroups.length === 0 ? (
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Nenhum grupo encontrado</Text>
+            <Text style={styles.emptySubtext}>Tente outro termo de pesquisa.</Text>
+          </Card>
         ) : (
-          groups.map(renderGroup)
+          filteredGroups.map(renderGroup)
         )}
       </ScrollView>
 

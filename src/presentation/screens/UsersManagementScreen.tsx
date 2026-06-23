@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Card } from '../components/Card';
 import { HeaderAddButton } from '../components/HeaderAddButton';
+import { SearchBar } from '../components/SearchBar';
 import { ManagedUser, UserModal, UserModalPayload } from '../components/UserModal';
 import { container } from '../../core/di/container';
 import { theme } from '../../config/theme';
@@ -34,6 +35,7 @@ const mapApiUser = (apiUser: any): ManagedUser => ({
   name: apiUser.name,
   email: apiUser.email,
   groupsCount: Array.isArray(apiUser.groups) ? apiUser.groups.length : 0,
+  groupIds: Array.isArray(apiUser.groups) ? apiUser.groups.map((g: any) => String(g.id)) : [],
   createdAt: apiUser.created_at ? new Date(apiUser.created_at) : undefined,
 });
 
@@ -47,13 +49,16 @@ const UsersManagementScreen: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | undefined>(undefined);
+  const [search, setSearch] = useState('');
 
   const loadUsers = async (targetPage = page) => {
     try {
       setLoading(true);
-      const response = await container.apiClient.get<UsersApiResponse>('/users', {
-        params: { page: targetPage, per_page: 10 },
-      });
+      const params: Record<string, any> = { page: targetPage, per_page: 10 };
+      if (search.trim()) {
+        params.search = search.trim();
+      }
+      const response = await container.apiClient.get<UsersApiResponse>('/users', { params });
       const list = Array.isArray(response.data?.data) ? response.data.data.map(mapApiUser) : [];
       setUsers(list);
       setPage(response.data?.current_page ?? targetPage);
@@ -67,9 +72,15 @@ const UsersManagementScreen: React.FC = () => {
     }
   };
 
+  // Carrega na montagem e recarrega ao pesquisar (debounce). A busca é
+  // server-side, então procura em todos os usuários, não só na página atual.
   useEffect(() => {
-    loadUsers(1);
-  }, []);
+    const timer = setTimeout(() => {
+      loadUsers(1);
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -128,6 +139,7 @@ const UsersManagementScreen: React.FC = () => {
         await container.apiClient.put(`/users/${selectedUser.id}`, {
           name: payload.name,
           email: payload.email,
+          group_ids: payload.group_ids,
         });
         await loadUsers(page);
       } else {
@@ -141,7 +153,7 @@ const UsersManagementScreen: React.FC = () => {
     }
   };
 
-  if (loading && users.length === 0) {
+  if (loading && users.length === 0 && !search.trim()) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
@@ -157,8 +169,14 @@ const UsersManagementScreen: React.FC = () => {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Pesquisar por nome ou e-mail..."
+        />
         <Text style={styles.subtitle}>
           {total} usuário{total === 1 ? '' : 's'}
         </Text>
