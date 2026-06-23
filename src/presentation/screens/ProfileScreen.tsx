@@ -40,6 +40,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState(user?.email || '');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Estados para grupos
@@ -317,26 +319,60 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
               <View style={styles.field}>
                 <Text style={styles.label}>Nova Senha</Text>
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Digite a nova senha"
-                  placeholderTextColor={theme.colors.textSecondary}
-                  secureTextEntry
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Digite a nova senha"
+                    placeholderTextColor={theme.colors.textSecondary}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword((v) => !v)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Icon
+                      family="Ionicons"
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color={theme.colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.field}>
                 <Text style={styles.label}>Confirmar Senha</Text>
-                <TextInput
-                  style={styles.input}
-                  value={passwordConfirmation}
-                  onChangeText={setPasswordConfirmation}
-                  placeholder="Confirme a nova senha"
-                  placeholderTextColor={theme.colors.textSecondary}
-                  secureTextEntry
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={passwordConfirmation}
+                    onChangeText={setPasswordConfirmation}
+                    placeholder="Confirme a nova senha"
+                    placeholderTextColor={theme.colors.textSecondary}
+                    secureTextEntry={!showPasswordConfirmation}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPasswordConfirmation((v) => !v)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Icon
+                      family="Ionicons"
+                      name={showPasswordConfirmation ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color={theme.colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
             </>
           )}
@@ -549,6 +585,24 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     color: theme.colors.text,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    paddingRight: theme.spacing.sm,
+  },
+  passwordInput: {
+    ...theme.typography.body,
+    flex: 1,
+    padding: theme.spacing.md,
+    color: theme.colors.text,
+  },
+  eyeButton: {
+    padding: theme.spacing.sm,
   },
   divider: {
     height: 1,
