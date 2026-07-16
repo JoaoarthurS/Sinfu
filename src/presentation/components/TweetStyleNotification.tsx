@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  Modal,
+  Image,
 } from 'react-native';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
@@ -29,6 +31,7 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
   onUnsave,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [imageExpanded, setImageExpanded] = useState(false);
   const [isSaved, setIsSaved] = useState(notification.saved || false);
 
   useEffect(() => {
@@ -95,17 +98,19 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
       <View style={styles.content}>
         <Text style={styles.message}>{notification.message}</Text>
 
-        {/* Image */}
+        {/* Image (toque para expandir) */}
         {notification.imageUrl && notification.imageUrl.trim().length > 0 && !imageError && (
-          <AuthenticatedImage
-            uri={notification.imageUrl}
-            style={styles.image}
-            resizeMode="cover"
-            onError={() => {
-              console.error('🖼️ [TweetStyleNotification] Erro ao carregar imagem');
-              setImageError(true);
-            }}
-          />
+          <TouchableOpacity activeOpacity={0.9} onPress={() => setImageExpanded(true)}>
+            <AuthenticatedImage
+              uri={notification.imageUrl}
+              style={styles.image}
+              resizeMode="cover"
+              onError={() => {
+                console.error('🖼️ [TweetStyleNotification] Erro ao carregar imagem');
+                setImageError(true);
+              }}
+            />
+          </TouchableOpacity>
         )}
         
         {/* Fallback se a imagem falhar */}
@@ -147,6 +152,37 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
           <Text style={styles.footerButtonText}>Compartilhar</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Visualização da imagem em tela cheia */}
+      {notification.imageUrl && (
+        <Modal
+          visible={imageExpanded}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setImageExpanded(false)}
+        >
+          <View style={styles.expandedOverlay}>
+            <TouchableOpacity
+              style={styles.expandedCloseButton}
+              onPress={() => setImageExpanded(false)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Icon family="Ionicons" name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.expandedImageArea}
+              activeOpacity={1}
+              onPress={() => setImageExpanded(false)}
+            >
+              <Image
+                source={{ uri: notification.imageUrl }}
+                style={styles.expandedImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -257,5 +293,29 @@ const styles = StyleSheet.create({
   footerButtonTextActive: {
     color: theme.colors.primary,
     fontWeight: '700',
+  },
+  expandedOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  },
+  expandedCloseButton: {
+    position: 'absolute',
+    top: 48,
+    right: 20,
+    zIndex: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  expandedImageArea: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  expandedImage: {
+    width: '100%',
+    height: '100%',
   },
 });
