@@ -12,9 +12,6 @@ import { UserRole } from '../domain/entities/User';
 
 // Importar telas
 import {
-  UserTypeSelectionScreen,
-  AdminLoginScreen,
-  UserLoginScreen,
   UserRegisterScreen,
   ForgotPasswordScreen,
   LoginScreen,
@@ -61,17 +58,11 @@ export const AppNavigator: React.FC = () => {
       >
         {!isAuthenticated ? (
           <>
-            <Stack.Screen 
-              name="UserTypeSelection" 
-              component={UserTypeSelectionScreen} 
-            />
-            <Stack.Screen 
-              name="AdminLogin" 
-              component={AdminLoginScreen} 
-            />
-            <Stack.Screen 
-              name="UserLogin" 
-              component={UserLoginScreen} 
+            {/* Login unificado: o redirecionamento por perfil acontece aqui,
+                trocando de stack conforme o role e o portal ativo. */}
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
             />
             <Stack.Screen
               name="UserRegister"

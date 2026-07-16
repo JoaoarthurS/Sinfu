@@ -6,12 +6,9 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { User } from '../domain/entities/User';
 
 export type RootStackParamList = {
-  UserTypeSelection: undefined;
-  AdminLogin: undefined;
-  UserLogin: undefined;
+  Login: undefined;
   UserRegister: undefined;
   ForgotPassword: undefined;
-  Login: undefined; // Mantido para compatibilidade
   UserDashboard: { user: User };
   AdminDashboard: { user: User };
   UsersManagement: undefined;
@@ -22,9 +19,6 @@ export type RootStackParamList = {
   SavedNotifications: undefined;
 };
 
-export type UserTypeSelectionScreenProps = NativeStackScreenProps<RootStackParamList, 'UserTypeSelection'>;
-export type AdminLoginScreenProps = NativeStackScreenProps<RootStackParamList, 'AdminLogin'>;
-export type UserLoginScreenProps = NativeStackScreenProps<RootStackParamList, 'UserLogin'>;
 export type UserRegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'UserRegister'>;
 export type ForgotPasswordScreenProps = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;

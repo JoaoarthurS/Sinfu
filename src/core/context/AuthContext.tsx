@@ -16,6 +16,7 @@ interface AuthContextData {
   loading: boolean;
   isAuthenticated: boolean;
   currentPortal: AuthPortal;
+  switchPortal: (portal: AuthPortal) => Promise<void>;
   signIn: (email: string, password: string, portal?: AuthPortal) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, groupIds?: string[]) => Promise<void>;
@@ -127,6 +128,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, [user]);
 
+  /**
+   * Alterna o portal ativo (painel admin ↔ feed) sem novo login.
+   * Apenas administradores podem entrar no portal admin; a troca é persistida
+   * para ser mantida ao reabrir o app.
+   */
+  const switchPortal = async (portal: AuthPortal) => {
+    if (portal === 'admin' && user?.role !== UserRole.ADMIN) {
+      return;
+    }
+    await container.storageService.setItem(STORAGE_KEYS.AUTH_PORTAL, portal);
+    setCurrentPortal(portal);
+  };
+
   const signIn = async (email: string, password: string, portal?: AuthPortal) => {
     // Não usar o estado global `loading` aqui: ele desmonta todo o navigator
     // (ver AppNavigator) e, ao alternar true/false em um login com erro, remonta
@@ -228,6 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loading,
         isAuthenticated: !!user,
         currentPortal,
+        switchPortal,
         signIn,
         forgotPassword,
         signUp,

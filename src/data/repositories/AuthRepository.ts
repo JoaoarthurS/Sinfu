@@ -8,6 +8,7 @@ import { IApiClient } from '../../domain/interfaces/IApiClient';
 import { IStorageService } from '../../domain/interfaces/IStorageService';
 import { AuthCredentials, AuthResponse, RegisterData, User, UserRole } from '../../domain/entities/User';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../config/api.config';
+import { fixImageUrl } from '../../core/utils/fixImageUrl';
 
 export class AuthRepository implements IAuthRepository {
   constructor(
@@ -32,7 +33,7 @@ export class AuthRepository implements IAuthRepository {
         email: apiUser.email,
         role: this.mapRoleFromApi(apiUser.roles),
         profileImage: apiUser.profile_image,
-        profileImageUrl: apiUser.profile_image_url,
+        profileImageUrl: fixImageUrl(apiUser.profile_image_url),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -129,13 +130,20 @@ export class AuthRepository implements IAuthRepository {
   }
 
   async validateToken(token: string): Promise<boolean> {
+    this.apiClient.setAuthToken(token);
     try {
-      this.apiClient.setAuthToken(token);
       await this.apiClient.get(API_ENDPOINTS.AUTH.ME);
       return true;
-    } catch (error) {
-      console.error('Validate token error:', error);
-      return false;
+    } catch (error: any) {
+      // Só considera o token inválido quando o servidor o rejeita
+      // explicitamente (401/403). Falha de rede, timeout ou erro do
+      // servidor não podem apagar a sessão salva do usuário.
+      const status = error?.status;
+      if (status === 401 || status === 403) {
+        return false;
+      }
+      console.error('Validate token error (sessão mantida):', error);
+      return true;
     }
   }
 }

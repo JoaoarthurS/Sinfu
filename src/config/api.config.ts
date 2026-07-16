@@ -5,7 +5,7 @@
  * Centralizando configurações seguindo boas práticas
  */
 export const API_CONFIG = {
-  BASE_URL: 'https://0032-200-17-122-126.ngrok-free.app/api/',
+  BASE_URL: 'https://api.uninotes.unimontes.br/api/',
   TIMEOUT: 30000,
   HEADERS: {
     'Content-Type': 'application/json',
@@ -26,7 +26,9 @@ export const API_ENDPOINTS = {
     FORGOT_PASSWORD: 'auth/forgot-password',
     LOGOUT: 'auth/logout',
     REGISTER: 'auth/register/user',
-    ME: 'auth/me',
+    // Valida a sessão salva. O backend não expõe 'auth/me'; a rota
+    // autenticada equivalente é 'users/me'.
+    ME: 'users/me',
   },
 
   DEVICE_TOKEN: {

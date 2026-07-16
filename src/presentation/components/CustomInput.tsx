@@ -24,18 +24,33 @@ export const CustomInput: React.FC<CustomInputProps> = ({
   label,
   error,
   isPassword,
+  onFocus,
+  onBlur,
   ...props
 }) => {
   const [isSecure, setIsSecure] = useState(isPassword);
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputContainer}>
         <TextInput
-          style={[styles.input, error && styles.inputError]}
+          style={[
+            styles.input,
+            isFocused && styles.inputFocused,
+            error && styles.inputError,
+          ]}
           placeholderTextColor={theme.colors.textSecondary}
           secureTextEntry={isSecure}
+          onFocus={(e) => {
+            setIsFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            onBlur?.(e);
+          }}
           {...props}
         />
         {isPassword && (
@@ -43,11 +58,11 @@ export const CustomInput: React.FC<CustomInputProps> = ({
             style={styles.eyeButton}
             onPress={() => setIsSecure(!isSecure)}
           >
-            <Icon 
-              family="FontAwesome" 
-              name={isSecure ? 'eye' : 'eye-slash'} 
-              size={20} 
-              color={theme.colors.textSecondary} 
+            <Icon
+              family="FontAwesome"
+              name={isSecure ? 'eye' : 'eye-slash'}
+              size={20}
+              color={theme.colors.textSecondary}
             />
           </TouchableOpacity>
         )}
@@ -79,6 +94,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     color: theme.colors.text,
+    minHeight: 48,
+  },
+  inputFocused: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
   },
   inputError: {
     borderColor: theme.colors.danger,

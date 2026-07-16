@@ -16,6 +16,7 @@ import Icon from '../../core/components/Icon';
 import { Notification } from '../../domain/entities/Notification';
 import { container } from '../../core/di/container';
 import { shareNotification } from '../../core/utils/shareNotification';
+import { formatTime } from '../../core/utils/formatTime';
 
 interface InstagramStyleNotificationProps {
   notification: Notification;
@@ -75,6 +76,7 @@ export const InstagramStyleNotification: React.FC<InstagramStyleNotificationProp
           <Text style={styles.title} numberOfLines={1}>
             {notification.title}
           </Text>
+          <Text style={styles.time}>{formatTime(notification.createdAt)}</Text>
         </View>
       </View>
 

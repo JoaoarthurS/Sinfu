@@ -39,6 +39,8 @@ export class NotificationRepository implements INotificationRepository {
         sentAt: notification.sent_at ? new Date(notification.sent_at) : null,
         createdAt: new Date(notification.createdAt),
         updatedAt: new Date(notification.updatedAt),
+        groups: notification.groups ?? [],
+        targetUsers: notification.target_users ?? [],
       }));
 
       console.log('📱 [NotificationRepository] Notificações processadas:', notifications.length);
@@ -95,8 +97,10 @@ export class NotificationRepository implements INotificationRepository {
           });
         }
 
-        if (notification.targetUserId) {
-          formData.append('target_user_id', notification.targetUserId);
+        if (notification.targetUserIds && notification.targetUserIds.length > 0) {
+          notification.targetUserIds.forEach((id, index) => {
+            formData.append(`target_user_ids[${index}]`, id);
+          });
         }
 
         // Sempre enviar o link (mesmo vazio) para que o backend consiga
@@ -122,7 +126,7 @@ export class NotificationRepository implements INotificationRepository {
           title: notification.title,
           message: notification.message,
           group_ids: notification.groupIds,
-          target_user_id: notification.targetUserId,
+          target_user_ids: notification.targetUserIds,
           link: notification.link ?? '',
         });
       }

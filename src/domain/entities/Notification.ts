@@ -3,6 +3,12 @@
  * Princípio SOLID: SRP (Single Responsibility Principle)
  */
 
+/** Referência resumida a um grupo ou usuário destinatário */
+export interface RecipientRef {
+  id: string | number;
+  name: string;
+}
+
 export interface Notification {
   id: string;
   title: string;
@@ -17,6 +23,8 @@ export interface Notification {
   createdBy?: string;
   link?: string;
   imageUrl?: string;
+  groups?: RecipientRef[]; // grupos destinatários
+  targetUsers?: RecipientRef[]; // usuários-alvo (alvo "Por usuário")
 }
 
 export interface CreateNotificationDTO {
@@ -24,7 +32,7 @@ export interface CreateNotificationDTO {
   message: string;
   userIds?: string[];
   groupIds?: string[];
-  targetUserId?: string; // destinatário único (alvo "Por usuário")
+  targetUserIds?: string[]; // destinatários (alvo "Por usuário")
   link?: string; // string vazia = remover o link
   image?: any; // Para upload de arquivo de imagem
   removeImage?: boolean; // remove a imagem já vinculada (edição)

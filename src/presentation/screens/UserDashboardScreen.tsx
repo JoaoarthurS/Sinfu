@@ -20,6 +20,7 @@ import firebaseMessagingService from '../../data/services/FirebaseMessagingServi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserDashboardScreenProps } from '../../navigation/types';
 import { useAuth } from '../../core/hooks/useAuth';
+import { UserRole } from '../../domain/entities/User';
 import { Avatar } from '../components/Avatar';
 import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
@@ -30,7 +31,8 @@ import { container } from '../../core/di/container';
 import { getSessionErrorMessage } from '../../core/utils/errorHandler';
 
 const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, navigation }) => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, switchPortal } = useAuth();
+  const isAdmin = user?.role === UserRole.ADMIN;
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -131,7 +133,23 @@ const UserDashboardScreen: React.FC<UserDashboardScreenProps> = ({ route, naviga
           />
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity 
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => switchPortal('admin')}
+              style={styles.adminPortalButton}
+              accessibilityRole="button"
+              accessibilityLabel="Voltar ao painel administrativo"
+            >
+              <Icon
+                family="Ionicons"
+                name="shield-checkmark-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.adminPortalButtonText}>Painel</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
             onPress={() => navigation.navigate('Profile')}
             style={styles.iconButton}
           >
@@ -242,6 +260,23 @@ const styles = StyleSheet.create({
     height: 44, // maior
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  adminPortalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.round,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '0D',
+    minHeight: 36,
+  },
+  adminPortalButtonText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
   content: {
     flex: 1,

@@ -301,7 +301,7 @@ const UserRegisterScreen: React.FC<UserRegisterScreenProps> = ({ navigation }) =
 
               <TouchableOpacity
                 style={styles.loginLinkContainer}
-                onPress={() => navigation.navigate('UserLogin')}
+                onPress={() => navigation.navigate('Login')}
               >
                 <Text style={styles.loginLinkText}>Ja tem conta? Entrar</Text>
               </TouchableOpacity>

@@ -17,6 +17,7 @@ import { Notification } from '../../domain/entities/Notification';
 import { AuthenticatedImage } from './AuthenticatedImage';
 import { container } from '../../core/di/container';
 import { shareNotification } from '../../core/utils/shareNotification';
+import { formatTime } from '../../core/utils/formatTime';
 
 interface TweetStyleNotificationProps {
   notification: Notification;
@@ -42,18 +43,6 @@ export const TweetStyleNotification: React.FC<TweetStyleNotificationProps> = ({
     imageUrl: notification.imageUrl ? notification.imageUrl.substring(0, 100) : null,
     imageError
   });
-
-  const formatTime = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-    return `${days}d`;
-  };
 
   const handleLinkPress = () => {
     if (notification.link) {
@@ -167,11 +156,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     marginBottom: theme.spacing.md,
-    padding: theme.spacing.md,
     ...theme.shadows.sm,
   },
   header: {
     flexDirection: 'row',
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
   headerInfo: {
@@ -188,6 +178,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   content: {
+    paddingHorizontal: theme.spacing.md,
   },
   message: {
     ...theme.typography.body,

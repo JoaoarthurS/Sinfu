@@ -8,7 +8,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -26,17 +25,19 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(remoteMessage: RemoteMessage) {
-        // Se a notificação tiver um link, o toque abre o link diretamente;
-        // caso contrário, abre o app.
         val link = remoteMessage.data["link"]
-        val intent = if (!link.isNullOrEmpty()) {
-            Intent(Intent.ACTION_VIEW, Uri.parse(link)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Notificação"
+        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: ""
+        // Inclui o link no texto exibido para que ele apareça na notificação.
+        val displayText = if (!link.isNullOrEmpty()) {
+            if (body.isNotBlank()) "$body\n\n$link" else link
         } else {
-            Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
+            body
+        }
+
+        // Ao tocar, sempre abre o aplicativo (não redireciona para o link).
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 
         val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -57,8 +58,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Notificação")
-            .setContentText(remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "")
+            .setContentTitle(title)
+            .setContentText(displayText)
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
@@ -72,18 +73,26 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (!imageUrl.isNullOrEmpty()) {
             val bitmap = getBitmapFromUrl(imageUrl)
             if (bitmap != null) {
-                notificationBuilder.setStyle(
-                    NotificationCompat.BigPictureStyle()
-                        .bigPicture(bitmap)
-                        .bigLargeIcon(null as Bitmap?)
-                )
+                val bigPicture = NotificationCompat.BigPictureStyle()
+                    .bigPicture(bitmap)
+                    .bigLargeIcon(null as Bitmap?)
+                // Mostra o texto (incluindo o link) como resumo ao expandir a imagem.
+                if (displayText.isNotBlank()) {
+                    bigPicture.setSummaryText(displayText)
+                }
+                notificationBuilder.setStyle(bigPicture)
                 notificationBuilder.setLargeIcon(bitmap)
+            } else {
+                // Falha ao baixar a imagem: ainda mostra o texto completo (com link).
+                notificationBuilder.setStyle(
+                    NotificationCompat.BigTextStyle().bigText(displayText)
+                )
             }
         } else {
             // Se não houver imagem, usar BigTextStyle para texto expandido
             notificationBuilder.setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText(remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "")
+                    .bigText(displayText)
             )
         }
 
@@ -118,7 +127,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 // proxies como o ngrok devolvam uma pagina HTML de aviso no lugar
                 // da imagem. UA proprio em vez do padrao "Java/...".
                 setRequestProperty("Accept", "image/*")
-                setRequestProperty("User-Agent", "SinfuApp-Android")
+                setRequestProperty("User-Agent", "UniNotesApp-Android")
                 setRequestProperty("ngrok-skip-browser-warning", "true")
             }
             connection.connect()

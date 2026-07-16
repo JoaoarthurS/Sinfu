@@ -168,6 +168,16 @@ const NotificationsManagementScreen: React.FC = () => {
     return notification.sentAt.toLocaleString('pt-BR');
   };
 
+  const formatRecipients = (notification: Notification) => {
+    if (notification.groups && notification.groups.length > 0) {
+      return `Grupos: ${notification.groups.map((g) => g.name).join(', ')}`;
+    }
+    if (notification.targetUsers && notification.targetUsers.length > 0) {
+      return `Pessoas: ${notification.targetUsers.map((u) => u.name).join(', ')}`;
+    }
+    return 'Todos os usuários';
+  };
+
   const renderNotification = (notification: Notification) => {
     const sent = notification.status === 'sent';
     return (
@@ -200,6 +210,13 @@ const NotificationsManagementScreen: React.FC = () => {
             <Icon family="FontAwesome" name="clock-o" size={12} color={theme.colors.textSecondary} />
             <Text style={styles.metaText}>{formatSentAt(notification)}</Text>
           </View>
+        </View>
+
+        <View style={styles.recipientsRow}>
+          <Icon family="FontAwesome" name="bullhorn" size={12} color={theme.colors.textSecondary} />
+          <Text style={[styles.metaText, styles.recipientsText]} numberOfLines={2}>
+            {formatRecipients(notification)}
+          </Text>
         </View>
 
         <View style={styles.actions}>
@@ -368,7 +385,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     marginTop: 12,
+  },
+  recipientsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
     marginBottom: 12,
+  },
+  recipientsText: {
+    flex: 1,
   },
   metaItem: {
     flexDirection: 'row',

@@ -44,8 +44,8 @@ interface NotificationFormModalProps {
 
 const TARGET_OPTIONS: { value: NotificationTarget; label: string }[] = [
   { value: 'all', label: 'Todos' },
-  { value: 'group', label: 'Por grupo' },
-  { value: 'user', label: 'Por usuário' },
+  { value: 'group', label: 'Grupos' },
+  { value: 'user', label: 'Pessoas' },
 ];
 
 export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
@@ -64,8 +64,8 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<any>(null);
   const [removeImage, setRemoveImage] = useState(false);
   const [target, setTarget] = useState<NotificationTarget>('all');
-  const [groupId, setGroupId] = useState<string>('');
-  const [userId, setUserId] = useState<string>('');
+  const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [userIds, setUserIds] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,8 +77,8 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
       setSelectedImage(null);
       setRemoveImage(false);
       setTarget('all');
-      setGroupId('');
-      setUserId('');
+      setGroupIds([]);
+      setUserIds([]);
       setErrors({});
       setSubmitting(false);
     }
@@ -98,14 +98,32 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
     );
   };
 
+  const toggleGroup = (id: string) => {
+    setGroupIds((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id],
+    );
+    setErrors((e) => ({ ...e, target: '' }));
+  };
+
+  const toggleUser = (id: string) => {
+    setUserIds((prev) =>
+      prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id],
+    );
+    setErrors((e) => ({ ...e, target: '' }));
+  };
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!title.trim()) errs.title = 'Título é obrigatório';
     else if (title.length > 100) errs.title = 'Máximo de 100 caracteres';
     if (!message.trim()) errs.message = 'Mensagem é obrigatória';
     else if (message.length > 500) errs.message = 'Máximo de 500 caracteres';
-    if (!isEditing && target === 'group' && !groupId) errs.target = 'Selecione um grupo';
-    if (!isEditing && target === 'user' && !userId) errs.target = 'Selecione um usuário';
+    if (!isEditing && target === 'group' && groupIds.length === 0) {
+      errs.target = 'Selecione ao menos um grupo';
+    }
+    if (!isEditing && target === 'user' && userIds.length === 0) {
+      errs.target = 'Selecione ao menos uma pessoa';
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -127,8 +145,8 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
     }
 
     if (!isEditing) {
-      if (target === 'group') data.groupIds = [groupId];
-      if (target === 'user') data.targetUserId = userId;
+      if (target === 'group') data.groupIds = groupIds;
+      if (target === 'user') data.targetUserIds = userIds;
     }
 
     try {
@@ -198,15 +216,20 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
                       groups.map((g) => (
                         <TouchableOpacity
                           key={g.id}
-                          style={[styles.pickerItem, groupId === g.id && styles.pickerItemActive]}
-                          onPress={() => setGroupId(g.id)}
+                          style={[styles.pickerItem, groupIds.includes(g.id) && styles.pickerItemActive]}
+                          onPress={() => toggleGroup(g.id)}
                         >
-                          <View style={styles.radio}>
-                            {groupId === g.id && <View style={styles.radioDot} />}
+                          <View style={styles.checkbox}>
+                            {groupIds.includes(g.id) && <View style={styles.checkboxChecked} />}
                           </View>
                           <Text style={styles.pickerItemText}>{g.name}</Text>
                         </TouchableOpacity>
                       ))
+                    )}
+                    {groupIds.length > 0 && (
+                      <Text style={styles.selectionCount}>
+                        {groupIds.length} grupo(s) selecionado(s)
+                      </Text>
                     )}
                   </View>
                 )}
@@ -219,11 +242,11 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
                       users.map((u) => (
                         <TouchableOpacity
                           key={u.id}
-                          style={[styles.pickerItem, userId === u.id && styles.pickerItemActive]}
-                          onPress={() => setUserId(u.id)}
+                          style={[styles.pickerItem, userIds.includes(u.id) && styles.pickerItemActive]}
+                          onPress={() => toggleUser(u.id)}
                         >
-                          <View style={styles.radio}>
-                            {userId === u.id && <View style={styles.radioDot} />}
+                          <View style={styles.checkbox}>
+                            {userIds.includes(u.id) && <View style={styles.checkboxChecked} />}
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={styles.pickerItemText}>{u.name}</Text>
@@ -231,6 +254,11 @@ export const NotificationFormModal: React.FC<NotificationFormModalProps> = ({
                           </View>
                         </TouchableOpacity>
                       ))
+                    )}
+                    {userIds.length > 0 && (
+                      <Text style={styles.selectionCount}>
+                        {userIds.length} pessoa(s) selecionada(s)
+                      </Text>
                     )}
                   </View>
                 )}
@@ -462,20 +490,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: theme.spacing.md,
   },
-  radio: {
+  checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: 4,
     borderWidth: 2,
     borderColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  radioDot: {
+  checkboxChecked: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: 2,
     backgroundColor: theme.colors.primary,
+  },
+  selectionCount: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    textAlign: 'right',
+    marginTop: theme.spacing.xs,
   },
   input: {
     ...theme.typography.body,

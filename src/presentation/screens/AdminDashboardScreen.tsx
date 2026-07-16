@@ -25,7 +25,7 @@ import { Notification } from '../../domain/entities/Notification';
 import Icon from '../../core/components/Icon';
 
 const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user, switchPortal } = useAuth();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -124,6 +124,24 @@ const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({ navigation 
               <Text style={styles.statText}>Notificações</Text>
             </View>
           </View>
+        </Card>
+
+        {/* Acesso ao feed dos usuários */}
+        <Card>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardTitleContainer}>
+              <Icon family="FontAwesome" name="newspaper-o" size={20} color={theme.colors.primary} style={styles.cardTitleIcon} />
+              <Text style={styles.cardTitle}>Feed de Notificações</Text>
+            </View>
+          </View>
+          <Text style={styles.groupDescription}>
+            Visualize o feed de notificações da mesma forma que os usuários comuns
+          </Text>
+          <CustomButton
+            title="Ir para o Feed"
+            onPress={() => switchPortal('user')}
+            style={styles.groupsButton}
+          />
         </Card>
 
         {/* Gerenciamento de Notificações */}

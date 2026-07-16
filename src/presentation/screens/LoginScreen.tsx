@@ -1,6 +1,8 @@
 /**
- * Tela de Login
- * Permite autenticação com dois perfis: User e Admin
+ * Tela de Login Unificada
+ * Autentica qualquer usuário e o direciona automaticamente conforme o perfil:
+ * administradores vão para o painel administrativo e usuários comuns para o
+ * feed (ver AppNavigator, que troca de stack com base no role/portal).
  */
 import React, { useState } from 'react';
 import {
@@ -10,7 +12,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  TouchableOpacity,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LoginScreenProps } from '../../navigation/types';
@@ -21,12 +24,13 @@ import { theme } from '../../config/theme';
 import Icon from '../../core/components/Icon';
 import { getErrorMessage } from '../../core/utils/errorHandler';
 
-const LoginScreen: React.FC<LoginScreenProps> = () => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
+  const [authError, setAuthError] = useState('');
 
   const isInvalidCredentialsError = (error: any): boolean => {
     const message = (error?.message || '').toLowerCase();
@@ -58,44 +62,33 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   };
 
   const handleLogin = async () => {
+    setAuthError('');
+
     if (!validateForm()) {
       return;
     }
 
     try {
       setLoading(true);
-      await signIn(email, password);
-      // Navegação é automática baseada no role do usuário
+      // Sem portal explícito: o AuthContext identifica o perfil retornado pela
+      // API e o AppNavigator direciona para o painel admin ou para o feed.
+      await signIn(email.trim(), password);
     } catch (error: any) {
-      const isCredentialError = isInvalidCredentialsError(error);
-      if (isCredentialError) {
+      if (isInvalidCredentialsError(error)) {
         setPassword('');
-        setErrors((prev) => ({ ...prev, password: '' }));
+        setAuthError('E-mail ou senha incorretos. Verifique seus dados e tente novamente.');
+      } else {
+        setAuthError(getErrorMessage(error));
       }
-      Alert.alert(
-        'Erro no Login',
-        isCredentialError
-          ? 'E-mail ou senha incorretos.'
-          : getErrorMessage(error)
-      );
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDemoCredentials = (type: 'user' | 'admin') => {
-    if (type === 'user') {
-      setEmail('user@example.com');
-      setPassword('user123');
-    } else {
-      setEmail('admin@example.com');
-      setPassword('admin123');
-    }
-    setErrors({ email: '', password: '' });
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -103,90 +96,107 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
+          {/* Identidade visual */}
           <View style={styles.header}>
-            <Icon family="FontAwesome" name="mobile" size={64} color={theme.colors.primary} />
-            <Text style={styles.title}>Sinfu</Text>
+            <View style={styles.brandIconContainer}>
+              <Icon family="FontAwesome" name="bell" size={36} color={theme.colors.textLight} />
+            </View>
+            <Text style={styles.title}>UniNotes</Text>
             <Text style={styles.subtitle}>Sistema de Notificações</Text>
           </View>
 
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Fazer Login</Text>
+          {/* Cartão do formulário */}
+          <View style={styles.formCard}>
+            <View style={styles.form}>
+              {authError ? (
+                <View style={styles.errorBanner} accessibilityRole="alert">
+                  <Icon
+                    family="FontAwesome"
+                    name="exclamation-circle"
+                    size={18}
+                    color={theme.colors.danger}
+                  />
+                  <Text style={styles.errorBannerText}>{authError}</Text>
+                </View>
+              ) : null}
 
-            <CustomInput
-              label="Email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({ ...errors, email: '' });
-              }}
-              placeholder="seu@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              error={errors.email}
-            />
+              <CustomInput
+                label="Email"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({ ...errors, email: '' });
+                  if (authError) setAuthError('');
+                }}
+                placeholder="seu@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                editable={!loading}
+                error={errors.email}
+              />
 
-            <CustomInput
-              label="Senha"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (errors.password) setErrors({ ...errors, password: '' });
-              }}
-              placeholder="Digite sua senha"
-              isPassword
-              autoCapitalize="none"
-              autoComplete="password"
-              error={errors.password}
-            />
+              <CustomInput
+                label="Senha"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) setErrors({ ...errors, password: '' });
+                  if (authError) setAuthError('');
+                }}
+                placeholder="Digite sua senha"
+                isPassword
+                autoCapitalize="none"
+                autoComplete="password"
+                editable={!loading}
+                onSubmitEditing={handleLogin}
+                returnKeyType="go"
+                error={errors.password}
+              />
 
-            <CustomButton
-              title="Entrar"
-              onPress={handleLogin}
-              loading={loading}
-              fullWidth
-              style={styles.loginButton}
-            />
-          </View>
+              <TouchableOpacity
+                style={styles.forgotPasswordContainer}
+                onPress={() => navigation.navigate('ForgotPassword')}
+                disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Esqueci minha senha"
+              >
+                <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+              </TouchableOpacity>
 
-          <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>Credenciais de Demonstração:</Text>
-            
-            <View style={styles.demoButtons}>
-              <View style={styles.demoButtonContainer}>
-                <Icon family="FontAwesome" name="user" size={16} color={theme.colors.primary} style={styles.buttonIcon} />
-                <CustomButton
-                  title="Usuário"
-                  variant="secondary"
-                  onPress={() => fillDemoCredentials('user')}
-                  style={styles.demoButton}
-                />
+              <CustomButton
+                title="Entrar"
+                onPress={handleLogin}
+                loading={loading}
+                fullWidth
+                style={styles.loginButton}
+              />
+
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>ou</Text>
+                <View style={styles.dividerLine} />
               </View>
-              
-              <View style={styles.demoButtonContainer}>
-                <Icon family="FontAwesome" name="user-tie" size={16} color={theme.colors.primary} style={styles.buttonIcon} />
-                <CustomButton
-                  title="Admin"
-                  variant="secondary"
-                  onPress={() => fillDemoCredentials('admin')}
-                  style={styles.demoButton}
-                />
-              </View>
+
+              <TouchableOpacity
+                style={styles.registerLinkContainer}
+                onPress={() => navigation.navigate('UserRegister')}
+                disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Criar uma nova conta"
+              >
+                <Text style={styles.registerLinkText}>
+                  Ainda não tem conta?{' '}
+                  <Text style={styles.registerLinkHighlight}>Cadastre-se</Text>
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.infoBox}>
-              <View style={styles.infoHeader}>
-                <Icon family="FontAwesome" name="info-circle" size={16} color={theme.colors.info} />
-                <Text style={styles.infoTitle}>Perfis:</Text>
-              </View>
-              <Text style={styles.infoText}>
-                • <Text style={styles.bold}>Usuário:</Text> Recebe notificações básicas
-              </Text>
-              <Text style={styles.infoText}>
-                • <Text style={styles.bold}>Admin:</Text> Recebe notificações administrativas
-              </Text>
-            </View>
+            <Text style={styles.footerText}>
+              Versão 1.0.0 • © {new Date().getFullYear()} UniNotes
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -197,97 +207,134 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.primary,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
   },
   header: {
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl + theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    backgroundColor: theme.colors.primary,
+  },
+  brandIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
   },
   title: {
-    ...theme.typography.h1,
-    color: theme.colors.primary,
+    fontSize: 34,
+    fontWeight: '700',
+    color: theme.colors.textLight,
+    letterSpacing: 0.5,
     marginBottom: theme.spacing.xs,
-    marginTop: theme.spacing.sm,
   },
   subtitle: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '400',
+  },
+  formCard: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: theme.borderRadius.xl * 2,
+    borderTopRightRadius: theme.borderRadius.xl * 2,
+    marginTop: -theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.lg,
+    ...theme.shadows.md,
   },
   form: {
-    marginBottom: theme.spacing.lg,
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
+    paddingHorizontal: theme.spacing.lg,
   },
   formTitle: {
     ...theme.typography.h2,
     color: theme.colors.text,
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xs,
   },
-  loginButton: {
-    marginTop: theme.spacing.md,
-  },
-  demoSection: {
-    marginTop: theme.spacing.xl,
-  },
-  demoTitle: {
+  formSubtitle: {
     ...theme.typography.bodySmall,
     color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  demoButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: theme.spacing.md,
     marginBottom: theme.spacing.lg,
   },
-  demoButtonContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  buttonIcon: {
-    position: 'absolute',
-    left: theme.spacing.md,
-    top: '50%',
-    marginTop: -8,
-    zIndex: 1,
-  },
-  demoButton: {
-    flex: 1,
-  },
-  infoBox: {
-    backgroundColor: theme.colors.backgroundSecondary,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.info,
-  },
-  infoHeader: {
+  errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.xs,
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.danger + '15',
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.danger,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
   },
-  infoTitle: {
+  errorBannerText: {
     ...theme.typography.bodySmall,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    color: theme.colors.danger,
+    flex: 1,
   },
-  infoText: {
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    paddingVertical: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
+  },
+  forgotPasswordText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.secondary,
+    fontWeight: '600',
+  },
+  loginButton: {
+    marginTop: theme.spacing.xs,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    marginVertical: theme.spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors.divider,
+  },
+  dividerText: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  registerLinkContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+  },
+  registerLinkText: {
     ...theme.typography.bodySmall,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
   },
-  bold: {
-    fontWeight: '600',
-    color: theme.colors.text,
+  registerLinkHighlight: {
+    color: theme.colors.secondary,
+    fontWeight: '700',
+  },
+  footerText: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.xl,
   },
 });
 

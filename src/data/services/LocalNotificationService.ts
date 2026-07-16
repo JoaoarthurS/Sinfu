@@ -38,7 +38,7 @@ export class LocalNotificationService {
       const channelId = await this.ensureChannel();
 
       const title =
-        message?.notification?.title ?? message?.data?.title ?? 'Sinfu';
+        message?.notification?.title ?? message?.data?.title ?? 'UniNotes';
       const body =
         message?.notification?.body ?? message?.data?.body ?? '';
       const imageUrl =

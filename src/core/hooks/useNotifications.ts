@@ -3,7 +3,7 @@
  * Facilita o uso do Firebase Messaging nos componentes
  */
 import { useEffect, useState } from 'react';
-import { Platform, Linking, Alert } from 'react-native';
+import { Platform } from 'react-native';
 import firebaseMessagingService from '../../data/services/FirebaseMessagingService';
 import localNotificationService from '../../data/services/LocalNotificationService';
 import { container } from '../di/container';
@@ -13,29 +13,6 @@ export const useNotifications = () => {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-
-  /**
-   * Abre um link se estiver presente nos dados da notificação
-   */
-  const handleNotificationLink = async (message: any) => {
-    const link = message?.data?.link || message?.notification?.link;
-    
-    if (link) {
-      try {
-        console.log('🔗 Abrindo link da notificação:', link);
-        const supported = await Linking.canOpenURL(link);
-        if (supported) {
-          await Linking.openURL(link);
-        } else {
-          console.error('Link não suportado:', link);
-          Alert.alert('Erro', 'Não foi possível abrir este link');
-        }
-      } catch (error) {
-        console.error('Erro ao abrir link:', error);
-        Alert.alert('Erro', 'Não foi possível abrir este link');
-      }
-    }
-  };
 
   /**
    * Inicializa o Firebase Messaging e obtém o token
@@ -96,19 +73,18 @@ export const useNotifications = () => {
       localNotificationService.displayFromRemoteMessage(message);
     });
 
-    // Listener para quando o app é aberto por uma notificação
-    firebaseMessagingService.onNotificationOpenedApp(async (message) => {
+    // Listener para quando o app é aberto por uma notificação.
+    // Apenas abre o app (não redireciona para o link da notificação).
+    firebaseMessagingService.onNotificationOpenedApp((message) => {
       console.log('App aberto por notificação:', message);
       setNotification(message);
-      await handleNotificationLink(message);
     });
 
     // Verificar se o app foi aberto por uma notificação
-    firebaseMessagingService.getInitialNotification().then(async (message) => {
+    firebaseMessagingService.getInitialNotification().then((message) => {
       if (message) {
         console.log('App iniciado por notificação:', message);
         setNotification(message);
-        await handleNotificationLink(message);
       }
     });
 
@@ -132,6 +108,5 @@ export const useNotifications = () => {
     initializeNotifications,
     registerToken,
     clearNotification: () => setNotification(null),
-    handleNotificationLink,
   };
 };
